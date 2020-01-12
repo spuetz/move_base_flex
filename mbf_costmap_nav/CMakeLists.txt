@@ -5,6 +5,7 @@ find_package(catkin REQUIRED
   COMPONENTS
   base_local_planner
   dynamic_reconfigure
+  forklift_interfaces
   geometry_msgs
   mbf_abstract_nav
   mbf_costmap_core
@@ -37,6 +38,7 @@ catkin_package(
   actionlib_msgs
   base_local_planner
   dynamic_reconfigure
+  forklift_interfaces
   geometry_msgs
   mbf_abstract_nav
   mbf_costmap_core

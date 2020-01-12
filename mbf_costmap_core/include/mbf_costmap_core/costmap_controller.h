@@ -40,6 +40,7 @@
 #define MBF_COSTMAP_CORE__COSTMAP_CONTROLLER_H_
 
 #include <mbf_abstract_core/abstract_controller.h>
+#include <forklift_interfaces/Checkpoint.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <mbf_utility/types.h>
 
@@ -102,6 +103,13 @@ namespace mbf_costmap_core {
        * @return True if the plan was updated successfully, false otherwise
        */
       virtual bool setPlan(const std::vector<geometry_msgs::PoseStamped> &plan) = 0;
+
+      /**
+       * @brief  Set the plan that the local planner is following
+       * @param plan The plan to pass to the local planner
+       * @return True if the plan was updated successfully, false otherwise
+       */
+      virtual bool setPlan(const std::vector<forklift_interfaces::Checkpoint> &plan) = 0;
 
       /**
        * @brief Requests the planner to cancel, e.g. if it takes too much time

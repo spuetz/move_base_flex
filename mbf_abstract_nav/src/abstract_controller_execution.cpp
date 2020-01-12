@@ -130,6 +130,21 @@ namespace mbf_abstract_nav
 
   void AbstractControllerExecution::setNewPlan(const std::vector<geometry_msgs::PoseStamped> &plan)
   {
+      boost::lock_guard<boost::mutex> guard(plan_mtx_);
+      new_plan_ = true;
+      
+      plan_.clear();
+
+      for(const auto pose: plan)
+      {
+        forklift_interfaces::Checkpoint checkpoint;
+        checkpoint.pose = pose;
+        plan_.emplace_back(checkpoint);
+      }
+  }
+
+  void AbstractControllerExecution::setNewPlan(const std::vector<forklift_interfaces::Checkpoint> &plan)
+  {
     if (moving_)
     {
       // This is fine on continuous replanning
@@ -149,7 +164,7 @@ namespace mbf_abstract_nav
   }
 
 
-  std::vector<geometry_msgs::PoseStamped> AbstractControllerExecution::getNewPlan()
+  std::vector<forklift_interfaces::Checkpoint> AbstractControllerExecution::getNewPlan()
   {
     boost::lock_guard<boost::mutex> guard(plan_mtx_);
     new_plan_ = false;
@@ -226,8 +241,8 @@ namespace mbf_abstract_nav
   {
     // check whether the controller plugin returns goal reached or if mbf should check for goal reached.
     return controller_->isGoalReached(dist_tolerance_, angle_tolerance_) || (mbf_tolerance_check_
-        && mbf_utility::distance(robot_pose_, plan_.back()) < dist_tolerance_
-        && mbf_utility::angle(robot_pose_, plan_.back()) < angle_tolerance_);
+        && mbf_utility::distance(robot_pose_, plan_.back().pose) < dist_tolerance_
+        && mbf_utility::angle(robot_pose_, plan_.back().pose) < angle_tolerance_);
   }
 
   bool AbstractControllerExecution::cancel()
@@ -249,7 +264,7 @@ namespace mbf_abstract_nav
     start_time_ = ros::Time::now();
 
     // init plan
-    std::vector<geometry_msgs::PoseStamped> plan;
+    std::vector<forklift_interfaces::Checkpoint> plan;
     if (!hasNewPlan())
     {
       setState(NO_PLAN);

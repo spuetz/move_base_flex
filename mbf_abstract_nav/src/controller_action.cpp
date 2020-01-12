@@ -76,14 +76,9 @@ void ControllerAction::start(
       // we update the goal handle and pass the new plan to the execution without stopping it
       execution_ptr = slot_it->second.execution;
       const forklift_interfaces::NavigateGoal &goal = *(goal_handle.getGoal().get());
-      std::vector<geometry_msgs::PoseStamped> goal_path;
-      for(std::size_t it = 0; it<goal.path.checkpoints.size(); it++)
-      {
-        goal_path.push_back(goal.path.checkpoints[it].pose);
-      }
-      execution_ptr->setNewPlan(goal_path);
+      execution_ptr->setNewPlan(goal.path.checkpoints);
       // Update also goal pose, so the feedback remains consistent
-      goal_pose_ = goal_path.back();
+      goal_pose_ = goal.path.checkpoints.back().pose;
       forklift_interfaces::NavigateResult result;
       fillNavigateResult(forklift_interfaces::NavigateResult::CANCELED, "Goal preempted by a new plan", result);
       concurrency_slots_[slot].goal_handle.setCanceled(result, result.remarks);
@@ -126,14 +121,8 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
   typename AbstractControllerExecution::ControllerState state_moving_input;
   bool controller_active = true;
   goal_mtx_.lock();
-  const forklift_interfaces::NavigateGoal &goal = *(goal_handle.getGoal().get());
-  std::vector<geometry_msgs::PoseStamped> goal_path;
-  for (int it = 0; it < goal.path.checkpoints.size(); it++)
-  {
-    goal_path.push_back(goal.path.checkpoints[it].pose);
-  }
-  
-  const std::vector<geometry_msgs::PoseStamped> &plan = goal_path;
+  const forklift_interfaces::NavigateGoal &goal = *(goal_handle.getGoal().get());  
+  const std::vector<forklift_interfaces::Checkpoint> &plan = goal.path.checkpoints;
   if (plan.empty())
   {
     fillNavigateResult(forklift_interfaces::NavigateResult::INVALID_PATH, "Controller started with an empty plan!", result);
@@ -141,7 +130,7 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
     ROS_ERROR_STREAM_NAMED(name_, result.remarks << " Canceling the action call.");
     controller_active = false;
   }
-  goal_pose_ = plan.back();
+  goal_pose_ = plan.back().pose;
   ROS_DEBUG_STREAM_NAMED(name_, "Called action \""
       << name_ << "\" with plan:" << std::endl
       << "frame: \"" << goal.path.header.frame_id << "\" " << std::endl
