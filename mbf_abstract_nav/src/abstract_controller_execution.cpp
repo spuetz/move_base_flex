@@ -130,6 +130,8 @@ namespace mbf_abstract_nav
 
   void AbstractControllerExecution::setNewPlan(const std::vector<geometry_msgs::PoseStamped> &plan)
   {
+
+       ROS_INFO("Setting plan");
       boost::lock_guard<boost::mutex> guard(plan_mtx_);
       new_plan_ = true;
       
@@ -321,7 +323,7 @@ namespace mbf_abstract_nav
             moving_ = false;
             return;
           }
-          current_goal_pub_.publish(plan.back());
+          current_goal_pub_.publish(plan.back().pose);
         }
 
         // compute robot pose and store it in robot_pose_

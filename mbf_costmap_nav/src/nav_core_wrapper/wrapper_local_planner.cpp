@@ -71,7 +71,12 @@ bool WrapperLocalPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped> 
 
 bool WrapperLocalPlanner::setPlan(const std::vector<forklift_interfaces::Checkpoint> &plan)
 {
-  //return nav_core_plugin_->setPlan(plan);
+  std::vector<geometry_msgs::PoseStamped> path;
+  for (const auto checkpoint: plan)
+  {
+    path.push_back(checkpoint.pose);
+  }
+  return nav_core_plugin_->setPlan(path);
 }
 
 bool WrapperLocalPlanner::cancel()
