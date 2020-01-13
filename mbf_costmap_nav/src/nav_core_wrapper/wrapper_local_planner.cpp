@@ -39,6 +39,7 @@
  */
 
 #include "nav_core_wrapper/wrapper_local_planner.h"
+#include <rr_path_follower/path_follower_ros.hpp>
 
 namespace mbf_nav_core_wrapper
 {
@@ -71,8 +72,13 @@ bool WrapperLocalPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped> 
 
 bool WrapperLocalPlanner::setPlan(const std::vector<forklift_interfaces::Checkpoint> &plan)
 {
+  rr_path_follower::PathFollowerROS* path_follower = dynamic_cast<rr_path_follower::PathFollowerROS*>(nav_core_plugin_.get()); //TODO: use dynamic_pointer_cast
+  if (path_follower)
+  {
+    return path_follower->setPlan(plan);
+  }
   std::vector<geometry_msgs::PoseStamped> path;
-  for (const auto checkpoint: plan)
+  for (const auto checkpoint: plan) 
   {
     path.push_back(checkpoint.pose);
   }

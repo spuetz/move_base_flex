@@ -7,6 +7,7 @@ find_package(catkin REQUIRED
   dynamic_reconfigure
   forklift_interfaces
   geometry_msgs
+  rr_path_follower
   mbf_abstract_nav
   mbf_costmap_core
   mbf_msgs
@@ -40,6 +41,7 @@ catkin_package(
   dynamic_reconfigure
   forklift_interfaces
   geometry_msgs
+  rr_path_follower
   mbf_abstract_nav
   mbf_costmap_core
   mbf_msgs

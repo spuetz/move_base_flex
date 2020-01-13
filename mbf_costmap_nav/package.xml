@@ -22,6 +22,7 @@
     <build_depend>base_local_planner</build_depend>
     <build_depend>dynamic_reconfigure</build_depend>
     <build_depend>forklift_interfaces</build_depend>
+    <build_depend>rr_path_follower</build_depend>
     <build_depend>std_msgs</build_depend>
     <build_depend>std_srvs</build_depend>
     <build_depend>mbf_abstract_nav</build_depend>
@@ -40,6 +41,7 @@
     <run_depend>base_local_planner</run_depend>
     <run_depend>dynamic_reconfigure</run_depend>
     <run_depend>forklift_interfaces</run_depend>
+    <run_depend>rr_path_follower</run_depend>
     <run_depend>std_msgs</run_depend>
     <run_depend>std_srvs</run_depend>
     <run_depend>mbf_abstract_nav</run_depend>
