@@ -76,9 +76,15 @@ void ControllerAction::start(
       // we update the goal handle and pass the new plan to the execution without stopping it
       execution_ptr = slot_it->second.execution;
       const forklift_interfaces::NavigateGoal &goal = *(goal_handle.getGoal().get());
-      execution_ptr->setNewPlan(goal.path.checkpoints);
+      std::vector<forklift_interfaces::Checkpoint> checkpoints;
+
+      for (const auto& route_point: goal.path.route_points)
+      {
+        checkpoints.push_back(route_point.node);
+      }
+      execution_ptr->setNewPlan(checkpoints);
       // Update also goal pose, so the feedback remains consistent
-      goal_pose_ = goal.path.checkpoints.back().pose;
+      goal_pose_ = goal.path.route_points.back().node.pose;
       forklift_interfaces::NavigateResult result;
       fillNavigateResult(forklift_interfaces::NavigateResult::CANCELED, "Goal preempted by a new plan", result);
       concurrency_slots_[slot].goal_handle.setCanceled(result, result.remarks);
@@ -122,7 +128,11 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
   bool controller_active = true;
   goal_mtx_.lock();
   const forklift_interfaces::NavigateGoal &goal = *(goal_handle.getGoal().get());  
-  const std::vector<forklift_interfaces::Checkpoint> &plan = goal.path.checkpoints;
+  std::vector<forklift_interfaces::Checkpoint> plan;
+  for (const auto& route_point: goal.path.route_points)
+  {
+    plan.push_back(route_point.node);
+  }
   if (plan.empty())
   {
     fillNavigateResult(forklift_interfaces::NavigateResult::INVALID_PATH, "Controller started with an empty plan!", result);
@@ -135,7 +145,7 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
       << name_ << "\" with plan:" << std::endl
       << "frame: \"" << goal.path.header.frame_id << "\" " << std::endl
       << "stamp: " << goal.path.header.stamp << std::endl
-      << "poses: " << goal.path.checkpoints.size() << std::endl
+      << "poses: " << goal.path.route_points.size() << std::endl
       << "goal: (" << goal_pose_.pose.position.x << ", "
       << goal_pose_.pose.position.y << ", "
       << goal_pose_.pose.position.z << ")");
