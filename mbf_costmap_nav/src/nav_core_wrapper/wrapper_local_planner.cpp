@@ -92,8 +92,7 @@ std::pair<uint32_t, uint32_t> WrapperLocalPlanner::getFeedback()
   {
     return path_follower->getFeedback();
   }
-  std::pair<uint32_t, uint32_t> feedback(0,0);
-  return feedback;
+  return std::make_pair<uint32_t, uint32_t>(0, 0);
 }
 
 bool WrapperLocalPlanner::cancel()

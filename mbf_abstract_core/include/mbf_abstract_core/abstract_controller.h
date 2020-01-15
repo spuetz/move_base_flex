@@ -125,7 +125,7 @@ namespace mbf_abstract_core{
        * @brief Requests the planner to give feedback for the current plan
        * @return Returns the id of last checkpoint covered and the checkpoint targeting
        */
-      virtual std::pair<uint32_t, uint32_t> getFeedback()=0;
+      virtual std::pair<uint32_t, uint32_t> getFeedback() { };
 
     protected:
       /**
