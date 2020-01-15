@@ -200,6 +200,11 @@ namespace mbf_abstract_nav
     return controller_->computeVelocityCommands(robot_pose, robot_velocity, vel_cmd, message);
   }
 
+  void AbstractControllerExecution::getFeedback(std::vector<forklift_interfaces::Checkpoint>& visited_checkpoints,
+                                                forklift_interfaces::Checkpoint& target_checkpoint)
+  {
+    controller_->getFeedback(visited_checkpoints, target_checkpoint);
+  }
 
   void AbstractControllerExecution::setVelocityCmd(const geometry_msgs::TwistStamped &vel_cmd)
   {

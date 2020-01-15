@@ -75,7 +75,9 @@ protected:
   void publishNavigateFeedback(
           GoalHandle& goal_handle,
           uint32_t outcome, const std::string &message,
-          const geometry_msgs::TwistStamped& current_twist);
+          const geometry_msgs::TwistStamped& current_twist,
+          const std::vector<forklift_interfaces::Checkpoint>& visited_checkpoints,
+          const forklift_interfaces::Checkpoint& target_checkpoint);
 
   /**
    * @brief Utility method to fill the Navigate action result in a single line

@@ -85,6 +85,15 @@ bool WrapperLocalPlanner::setPlan(const std::vector<forklift_interfaces::Checkpo
   return nav_core_plugin_->setPlan(path);
 }
 
+void WrapperLocalPlanner::getFeedback(std::vector<forklift_interfaces::Checkpoint>& visited_checkpoints, forklift_interfaces::Checkpoint& target_checkpoint)
+{
+  rr_path_follower::PathFollowerROS* path_follower = dynamic_cast<rr_path_follower::PathFollowerROS*>(nav_core_plugin_.get()); //TODO: use dynamic_pointer_cast
+  if (path_follower)
+  {
+    path_follower->updateFeedback(visited_checkpoints, target_checkpoint);
+  }
+}
+
 bool WrapperLocalPlanner::cancel()
 {
   return false;
