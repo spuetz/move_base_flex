@@ -122,11 +122,9 @@ namespace mbf_abstract_nav
 
     /**
      * @brief Requests the planner to give feedback for the current plan
-     * @param visited_checkpoints Sets the checkpoints covered by robot for current plan
-     * @param target_checkpoint Sets the checkpoint robot is targetting for current plan
-    */
-    virtual void getFeedback(std::vector<forklift_interfaces::Checkpoint>& visited_checkpoints,
-                             forklift_interfaces::Checkpoint& target_checkpoint);
+     * @return Returns the id of last checkpoint covered and the checkpoint targeting
+     */
+    virtual std::pair<uint32_t, uint32_t> getFeedback();
 
     /**
      * @brief Cancel the planner execution. This calls the cancel method of the planner plugin. This could be useful if the

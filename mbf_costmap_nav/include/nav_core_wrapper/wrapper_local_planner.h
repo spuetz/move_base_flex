@@ -102,11 +102,10 @@ namespace mbf_nav_core_wrapper {
       virtual bool setPlan(const std::vector<forklift_interfaces::Checkpoint> &plan);
 
       /**
-       * @brief  Gets the feedback from the local planner if implemented
-       * @param visited_checkpoints The points the robot has covered in the plan
-       * @param target_checkpoint The point in the plan the robot is trying to reach
+       * @brief Requests the planner to give feedback for the current plan
+       * @return Returns the id of last checkpoint covered and the checkpoint targeting
        */
-      virtual void getFeedback(std::vector<forklift_interfaces::Checkpoint>& visited_checkpoints, forklift_interfaces::Checkpoint& target_checkpoint);
+      virtual std::pair<uint32_t, uint32_t> getFeedback();
 
       /**
        * @brief Requests the planner to cancel, e.g. if it takes too much time

@@ -46,7 +46,6 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 
-#include <forklift_interfaces/Checkpoint.h>
 
 namespace mbf_abstract_core{
 
@@ -124,11 +123,9 @@ namespace mbf_abstract_core{
 
       /**
        * @brief Requests the planner to give feedback for the current plan
-       * @param visited_checkpoints Sets the checkpoints covered by robot for current plan
-       * @param target_checkpoint Sets the checkpoint robot is targetting for current plan
+       * @return Returns the id of last checkpoint covered and the checkpoint targeting
        */
-      virtual void getFeedback(std::vector<forklift_interfaces::Checkpoint>& visited_checkpoints,
-                             forklift_interfaces::Checkpoint& target_checkpoint)=0;
+      virtual std::pair<uint32_t, uint32_t> getFeedback()=0;
 
     protected:
       /**

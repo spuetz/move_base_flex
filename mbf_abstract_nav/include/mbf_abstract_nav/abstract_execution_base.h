@@ -96,11 +96,9 @@ class AbstractExecutionBase
 
   /**
    * @brief Requests the planner to give feedback for the current plan
-   * @param visited_checkpoints Sets the checkpoints covered by robot for current plan
-   * @param target_checkpoint Sets the checkpoint robot is targetting for current plan
+   * @return Returns the id of last checkpoint covered and the checkpoint targeting
    */
-  virtual void getFeedback(std::vector<forklift_interfaces::Checkpoint>& visited_checkpoints,
-                             forklift_interfaces::Checkpoint& target_checkpoint){};
+  virtual std::pair<uint32_t, uint32_t> getFeedback() { };
 
 protected:
   virtual void run() = 0;
