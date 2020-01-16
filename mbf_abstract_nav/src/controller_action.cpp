@@ -249,7 +249,7 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
       case AbstractControllerExecution::NO_LOCAL_CMD:
         ROS_WARN_STREAM_THROTTLE_NAMED(3, name_, "No velocity command received from controller! "
             << execution.getMessage());
-        publishNavigateFeedback(goal_handle, execution.getOutcome(), execution.getMessage(), execution.getVelocityCmd());
+        publishNavigateFeedback(goal_handle, execution.getOutcome(), execution.getMessage(), execution.getVelocityCmd(), execution.getFeedback());
         break;
 
       case AbstractControllerExecution::GOT_LOCAL_CMD:
@@ -272,7 +272,7 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
             break;
           }
         }
-        publishNavigateFeedback(goal_handle, execution.getOutcome(), execution.getMessage(), execution.getVelocityCmd());
+        publishNavigateFeedback(goal_handle, execution.getOutcome(), execution.getMessage(), execution.getVelocityCmd(), execution.getFeedback());
         break;
 
       case AbstractControllerExecution::ARRIVED_GOAL:
@@ -325,11 +325,14 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
 void ControllerAction::publishNavigateFeedback(
         GoalHandle& goal_handle,
         uint32_t outcome, const std::string &message,
-        const geometry_msgs::TwistStamped& current_twist)
+        const geometry_msgs::TwistStamped& current_twist,
+        const std::pair<uint32_t, uint32_t>& checkpoint_feedback)
 {
   forklift_interfaces::NavigateFeedback feedback;
   feedback.status = outcome;
   feedback.remarks = message;
+  feedback.last_checkpoint = checkpoint_feedback.first;
+  feedback.target_checkpoint = checkpoint_feedback.second;
 
   feedback.velocity = current_twist;
   if (feedback.velocity.header.stamp.isZero())

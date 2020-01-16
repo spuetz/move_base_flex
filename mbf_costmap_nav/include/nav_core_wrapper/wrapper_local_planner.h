@@ -102,6 +102,12 @@ namespace mbf_nav_core_wrapper {
       virtual bool setPlan(const std::vector<forklift_interfaces::Checkpoint> &plan);
 
       /**
+       * @brief Requests the planner to give feedback for the current plan
+       * @return Returns the id of last checkpoint covered and the checkpoint targeting
+       */
+      virtual std::pair<uint32_t, uint32_t> getFeedback();
+
+      /**
        * @brief Requests the planner to cancel, e.g. if it takes too much time
        * @remark New on MBF API
        * @return True if a cancel has been successfully requested, false if not implemented.

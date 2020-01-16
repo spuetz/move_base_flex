@@ -46,6 +46,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 
+
 namespace mbf_abstract_core{
 
   class AbstractController{
@@ -119,6 +120,12 @@ namespace mbf_abstract_core{
        * @return True if a cancel has been successfully requested, false if not implemented.
        */
       virtual bool cancel() = 0;
+
+      /**
+       * @brief Requests the planner to give feedback for the current plan
+       * @return Returns the id of last checkpoint covered and the checkpoint targeting
+       */
+      virtual std::pair<uint32_t, uint32_t> getFeedback() { };
 
     protected:
       /**

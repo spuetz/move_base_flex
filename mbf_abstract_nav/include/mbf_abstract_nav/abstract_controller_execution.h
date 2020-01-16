@@ -121,6 +121,12 @@ namespace mbf_abstract_nav
     void setNewPlan(const std::vector<forklift_interfaces::Checkpoint> &plan);
 
     /**
+     * @brief Requests the planner to give feedback for the current plan
+     * @return Returns the id of last checkpoint covered and the checkpoint targeting
+     */
+    virtual std::pair<uint32_t, uint32_t> getFeedback();
+
+    /**
      * @brief Cancel the planner execution. This calls the cancel method of the planner plugin. This could be useful if the
      * computation takes too much time.
      * @return true, if the planner plugin tries / tried to cancel the planning step.
