@@ -65,6 +65,8 @@ AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
       recovery_action_(name_action_recovery, robot_info_),
       move_base_action_(name_action_move_base, robot_info_, recovery_plugin_manager_.getLoadedNames())
 {
+
+  ROS_INFO("Abstract navigation server");
   ros::NodeHandle nh;
 
   // oscillation timeout and distance
@@ -189,11 +191,11 @@ void AbstractNavigationServer::cancelActionGetPath(ActionServerGetPath::GoalHand
 void AbstractNavigationServer::callActionNavigate(ActionServerNavigate::GoalHandle goal_handle)
 {
   const forklift_interfaces::NavigateGoal &goal = *(goal_handle.getGoal().get());
-
+  ROS_INFO("Controller handle");
   std::string controller_name;
   if(!controller_plugin_manager_.getLoadedNames().empty())
   {
-    controller_name = controller_plugin_manager_.getLoadedNames().front();
+    controller_name = goal.controller.empty() ? controller_plugin_manager_.getLoadedNames().front() : goal.controller;
   }
   else
   {
@@ -214,7 +216,7 @@ void AbstractNavigationServer::callActionNavigate(ActionServerNavigate::GoalHand
     goal_handle.setRejected(result, result.remarks);
     return;
   }
-
+  ROS_INFO("Controller name %s", controller_name.c_str());
   mbf_abstract_core::AbstractController::Ptr controller_plugin = controller_plugin_manager_.getPlugin(controller_name);
   ROS_INFO_STREAM_NAMED("navigate", "Start action \"navigate\" using controller \"" << controller_name
                         << "\" of type \"" << controller_plugin_manager_.getType(controller_name) << "\"");
