@@ -97,6 +97,11 @@ std::pair<uint32_t, uint32_t> WrapperLocalPlanner::getFeedback()
 
 bool WrapperLocalPlanner::cancel()
 {
+  rr_path_follower::PathFollowerROS* path_follower = dynamic_cast<rr_path_follower::PathFollowerROS*>(nav_core_plugin_.get()); //TODO: use dynamic_pointer_cast
+  if (path_follower)
+  {
+    return path_follower->cancel();
+  }
   return false;
 }
 
