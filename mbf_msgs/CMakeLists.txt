@@ -6,6 +6,7 @@ find_package(catkin REQUIRED
   actionlib_msgs
   genmsg
   geometry_msgs
+  forklift_interfaces
   message_generation
   message_runtime
   nav_msgs
@@ -35,6 +36,7 @@ generate_messages(
   DEPENDENCIES
   actionlib_msgs
   geometry_msgs
+  forklift_interfaces
   nav_msgs
   std_msgs
 )
@@ -43,6 +45,7 @@ catkin_package(
   CATKIN_DEPENDS
   actionlib_msgs
   geometry_msgs
+  forklift_interfaces
   message_runtime
   nav_msgs
   std_msgs

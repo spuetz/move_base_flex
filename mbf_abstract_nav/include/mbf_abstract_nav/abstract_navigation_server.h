@@ -62,7 +62,9 @@
 #include "mbf_abstract_nav/planner_action.h"
 #include "mbf_abstract_nav/controller_action.h"
 #include "mbf_abstract_nav/recovery_action.h"
-#include "mbf_abstract_nav/move_base_action.h"
+#include "mbf_abstract_nav/navigate_action.h"
+
+
 
 #include "mbf_abstract_nav/MoveBaseFlexConfig.h"
 
@@ -91,9 +93,10 @@ typedef boost::shared_ptr<ActionServerExePath> ActionServerExePathPtr;
 typedef actionlib::ActionServer<mbf_msgs::RecoveryAction> ActionServerRecovery;
 typedef boost::shared_ptr<ActionServerRecovery> ActionServerRecoveryPtr;
 
-//! MoveBase action server
-typedef actionlib::ActionServer<mbf_msgs::MoveBaseAction> ActionServerMoveBase;
-typedef boost::shared_ptr<ActionServerMoveBase> ActionServerMoveBasePtr;
+//! Navigate action server
+typedef actionlib::ActionServer<forklift_interfaces::NavigateAction> ActionServerNavigate;
+typedef boost::shared_ptr<ActionServerNavigate> ActionServerNavigatePtr;
+
 
 //! ExePath action topic name
 const std::string name_action_exe_path = "exe_path";
@@ -101,8 +104,9 @@ const std::string name_action_exe_path = "exe_path";
 const std::string name_action_get_path = "get_path";
 //! Recovery action topic name
 const std::string name_action_recovery = "recovery";
-//! MoveBase action topic name
-const std::string name_action_move_base = "move_base";
+//! Navigate action topic name
+const std::string name_action_navigate = "navigate";
+
 
 
 typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBaseFlexConfig> > DynamicReconfigureServer;
@@ -255,9 +259,9 @@ typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBase
      * @param goal SimpleActionServer goal containing all necessary parameters for the action execution. See the action
      *        definitions in mbf_msgs.
      */
-    virtual void callActionMoveBase(ActionServerMoveBase::GoalHandle goal_handle);
+    virtual void callActionNavigate(ActionServerNavigate::GoalHandle goal_handle);
 
-    virtual void cancelActionMoveBase(ActionServerMoveBase::GoalHandle goal_handle);
+    virtual void cancelActionNavigate(ActionServerNavigate::GoalHandle goal_handle);
 
     /**
      * @brief starts all action server.
@@ -318,7 +322,8 @@ typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBase
     ActionServerGetPathPtr action_server_get_path_ptr_;
 
     //! shared pointer to the MoveBase action server
-    ActionServerMoveBasePtr action_server_move_base_ptr_;
+    ActionServerNavigatePtr action_server_navigate_ptr_;
+    
 
     //! dynamic reconfigure server
     DynamicReconfigureServer dsrv_;
@@ -376,7 +381,7 @@ typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBase
     ControllerAction controller_action_;
     PlannerAction planner_action_;
     RecoveryAction recovery_action_;
-    MoveBaseAction move_base_action_;
+    NavigateAction navigate_action_;
   };
 
 } /* namespace mbf_abstract_nav */

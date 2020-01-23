@@ -186,12 +186,12 @@ void MoveBaseAction::actionExePathActive()
 void MoveBaseAction::actionExePathFeedback(
     const mbf_msgs::ExePathFeedbackConstPtr &feedback)
 {
-  move_base_feedback_.outcome = feedback->outcome;
-  move_base_feedback_.message = feedback->message;
+  move_base_feedback_.outcome = feedback->status;
+  move_base_feedback_.message = feedback->remarks;
   move_base_feedback_.angle_to_goal = feedback->angle_to_goal;
   move_base_feedback_.dist_to_goal = feedback->dist_to_goal;
   move_base_feedback_.current_pose = feedback->current_pose;
-  move_base_feedback_.last_cmd_vel = feedback->last_cmd_vel;
+  move_base_feedback_.last_cmd_vel = feedback->velocity;
   robot_pose_ = feedback->current_pose;
   goal_handle_.publishFeedback(move_base_feedback_);
 
@@ -259,8 +259,11 @@ void MoveBaseAction::actionGetPathDone(
       ROS_DEBUG_STREAM_NAMED("move_base", "Action \""
           << "move_base\" received a path from \""
           << "get_path\": " << state.getText());
-
-      exe_path_goal_.path = result.path;
+      exe_path_goal_.path.header = result.path.header; //TODO handle conversion from nav_msgs/Path to NavigatePath/Path
+      for(std::size_t it=0; it<result.path.poses.size(); it++)
+      {
+        exe_path_goal_.path.checkpoints[it].pose = result.path.poses[it];
+      }
       ROS_DEBUG_STREAM_NAMED("move_base", "Action \""
           << "move_base\" sends the path to \""
           << "exe_path\".");
@@ -362,8 +365,8 @@ void MoveBaseAction::actionExePathDone(
   mbf_msgs::MoveBaseResult move_base_result;
 
   // copy result from get_path action
-  move_base_result.outcome = result.outcome;
-  move_base_result.message = result.message;
+  move_base_result.outcome = result.status;
+  move_base_result.message = result.remarks;
   move_base_result.dist_to_goal = result.dist_to_goal;
   move_base_result.angle_to_goal = result.angle_to_goal;
   move_base_result.final_pose = result.final_pose;
@@ -381,7 +384,7 @@ void MoveBaseAction::actionExePathDone(
       break;
 
     case actionlib::SimpleClientGoalState::ABORTED:
-      switch (result.outcome)
+      switch (result.status)
       {
         case mbf_msgs::ExePathResult::INVALID_PATH:
         case mbf_msgs::ExePathResult::TF_ERROR:
@@ -401,7 +404,7 @@ void MoveBaseAction::actionExePathDone(
           }
           else
           {
-            ROS_WARN_STREAM_NAMED("move_base", "Abort the execution of the controller: " << result.message);
+            ROS_WARN_STREAM_NAMED("move_base", "Abort the execution of the controller: " << result.remarks);
             goal_handle_.setAborted(move_base_result, state.getText());
           }
           break;
@@ -574,7 +577,11 @@ void MoveBaseAction::actionGetPathReplanningDone(
   if(state == actionlib::SimpleClientGoalState::SUCCEEDED)
   {
     ROS_DEBUG_STREAM_NAMED("move_base", "Replanning succeeded; sending a goal to \"exe_path\" with the new plan");
-    exe_path_goal_.path = result->path;
+    exe_path_goal_.path.header = result->path.header; //TODO handle conversion from nav_msgs/Path to NavigatePath/Path
+    for(std::size_t it=0; it<result->path.poses.size(); it++)
+    {
+      exe_path_goal_.path.checkpoints[it].pose = result->path.poses[it];
+    }
     mbf_msgs::ExePathGoal goal(exe_path_goal_);
     action_client_exe_path_.sendGoal(
         goal,

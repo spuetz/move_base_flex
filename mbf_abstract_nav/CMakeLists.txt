@@ -5,8 +5,10 @@ find_package(catkin REQUIRED
   COMPONENTS
   actionlib
   actionlib_msgs
+  forklift_interfaces
   dynamic_reconfigure
   geometry_msgs
+  aifl_msg
   mbf_msgs
   mbf_abstract_core
   mbf_utility
@@ -38,6 +40,8 @@ catkin_package(
       actionlib_msgs
       dynamic_reconfigure
       geometry_msgs
+      forklift_interfaces
+      aifl_msg
       mbf_msgs
       mbf_abstract_core
       mbf_utility
@@ -62,7 +66,7 @@ add_library(${MBF_ABSTRACT_SERVER_LIB}
   src/controller_action.cpp
   src/planner_action.cpp
   src/recovery_action.cpp
-  src/move_base_action.cpp
+  src/navigate_action.cpp
   src/abstract_execution_base.cpp
   src/abstract_navigation_server.cpp
   src/abstract_planner_execution.cpp

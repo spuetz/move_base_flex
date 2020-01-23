@@ -48,6 +48,7 @@
 
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <forklift_interfaces/Checkpoint.h>
 #include <geometry_msgs/Twist.h>
 
 #include <mbf_utility/navigation_utility.h>
@@ -112,6 +113,17 @@ namespace mbf_abstract_nav
      */
     void setNewPlan(const std::vector<geometry_msgs::PoseStamped> &plan);
 
+    /**
+     * @brief Sets a new plan to the controller execution
+     * @param plan A vector of stamped poses.
+     */
+    void setNewPlan(const std::vector<forklift_interfaces::Checkpoint> &plan);
+
+    /**
+     * @brief Requests the planner to give feedback for the current plan
+     * @return Returns the id of last checkpoint covered and the checkpoint targeting
+     */
+    virtual std::pair<uint32_t, uint32_t> getFeedback();
     /**
      * @brief Cancel the planner execution. This calls the cancel method of the planner plugin. This could be useful if the
      * computation takes too much time.
@@ -294,13 +306,13 @@ namespace mbf_abstract_nav
      * @brief Gets the new available plan. This method is thread safe.
      * @return The plan
      */
-    std::vector<geometry_msgs::PoseStamped> getNewPlan();
+    std::vector<forklift_interfaces::Checkpoint> getNewPlan();
 
     //! the last calculated velocity command
     geometry_msgs::TwistStamped vel_cmd_stamped_;
 
     //! the last set plan which is currently processed by the controller
-    std::vector<geometry_msgs::PoseStamped> plan_;
+    std::vector<forklift_interfaces::Checkpoint> plan_;
 
     //! the duration which corresponds with the controller frequency.
     boost::chrono::microseconds calling_duration_;

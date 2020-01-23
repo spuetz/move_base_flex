@@ -45,6 +45,7 @@
 #include <boost/shared_ptr.hpp>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <forklift_interfaces/Checkpoint.h>
 
 namespace mbf_abstract_core{
 
@@ -105,6 +106,19 @@ namespace mbf_abstract_core{
        * @return True if the plan was updated successfully, false otherwise
        */
       virtual bool setPlan(const std::vector<geometry_msgs::PoseStamped> &plan) = 0;
+
+      /**
+       * @brief Set the plan that the local planner is following
+       * @param plan The plan to pass to the local planner
+       * @return True if the plan was updated successfully, false otherwise
+       */
+      virtual bool setPlan(const std::vector<forklift_interfaces::Checkpoint> &plan) {};
+
+      /**
+       * @brief Requests the planner to give feedback for the current plan
+       * @return Returns the id of last checkpoint covered and the checkpoint targeting
+       */
+      virtual std::pair<uint32_t, uint32_t> getFeedback() { };
 
       /**
        * @brief Requests the planner to cancel, e.g. if it takes too much time.

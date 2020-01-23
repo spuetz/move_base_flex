@@ -63,7 +63,7 @@ AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
       controller_action_(name_action_exe_path, robot_info_),
       planner_action_(name_action_get_path, robot_info_),
       recovery_action_(name_action_recovery, robot_info_),
-      move_base_action_(name_action_move_base, robot_info_, recovery_plugin_manager_.getLoadedNames())
+      navigate_action_(name_action_navigate, robot_info_)
 {
   ros::NodeHandle nh;
 
@@ -102,14 +102,14 @@ AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
       boost::bind(&mbf_abstract_nav::AbstractNavigationServer::cancelActionRecovery, this, _1),
       false));
 
-  action_server_move_base_ptr_ = ActionServerMoveBasePtr(
-    new ActionServerMoveBase(
+  action_server_navigate_ptr_ = ActionServerNavigatePtr(
+    new ActionServerNavigate(
       private_nh_,
-      name_action_move_base,
-      boost::bind(&mbf_abstract_nav::AbstractNavigationServer::callActionMoveBase, this, _1),
-      boost::bind(&mbf_abstract_nav::AbstractNavigationServer::cancelActionMoveBase, this, _1),
+      name_action_navigate,
+      boost::bind(&mbf_abstract_nav::AbstractNavigationServer::callActionNavigate, this, _1),
+      boost::bind(&mbf_abstract_nav::AbstractNavigationServer::cancelActionNavigate, this, _1),
       false));
-
+  
   // XXX note that we don't start a dynamic reconfigure server, to avoid colliding with the one possibly created by
   // the base class. If none, it should call startDynamicReconfigureServer method to start the one defined here for
   // providing just the abstract server parameters
@@ -198,20 +198,20 @@ void AbstractNavigationServer::callActionExePath(ActionServerExePath::GoalHandle
   else
   {
     mbf_msgs::ExePathResult result;
-    result.outcome = mbf_msgs::ExePathResult::INVALID_PLUGIN;
-    result.message = "No plugins loaded at all!";
-    ROS_WARN_STREAM_NAMED("exe_path", result.message);
-    goal_handle.setRejected(result, result.message);
+    result.status = mbf_msgs::ExePathResult::INVALID_PLUGIN;
+    result.remarks = "No plugins loaded at all!";
+    ROS_WARN_STREAM_NAMED("exe_path", result.remarks);
+    goal_handle.setRejected(result, result.remarks);
     return;
   }
 
   if(!controller_plugin_manager_.hasPlugin(controller_name))
   {
     mbf_msgs::ExePathResult result;
-    result.outcome = mbf_msgs::ExePathResult::INVALID_PLUGIN;
-    result.message = "No plugin loaded with the given name \"" + goal.controller + "\"!";
-    ROS_WARN_STREAM_NAMED("exe_path", result.message);
-    goal_handle.setRejected(result, result.message);
+    result.status = mbf_msgs::ExePathResult::INVALID_PLUGIN;
+    result.remarks = "No plugin loaded with the given name \"" + goal.controller + "\"!";
+    ROS_WARN_STREAM_NAMED("exe_path", result.remarks);
+    goal_handle.setRejected(result, result.remarks);
     return;
   }
 
@@ -231,10 +231,10 @@ void AbstractNavigationServer::callActionExePath(ActionServerExePath::GoalHandle
   else
   {
     mbf_msgs::ExePathResult result;
-    result.outcome = mbf_msgs::ExePathResult::INTERNAL_ERROR;
-    result.message = "Internal Error: \"controller_plugin\" pointer should not be a null pointer!";
-    ROS_FATAL_STREAM_NAMED("exe_path", result.message);
-    goal_handle.setRejected(result, result.message);
+    result.status = mbf_msgs::ExePathResult::INTERNAL_ERROR;
+    result.remarks = "Internal Error: \"controller_plugin\" pointer should not be a null pointer!";
+    ROS_FATAL_STREAM_NAMED("exe_path", result.remarks);
+    goal_handle.setRejected(result, result.remarks);
   }
 }
 
@@ -302,16 +302,16 @@ void AbstractNavigationServer::cancelActionRecovery(ActionServerRecovery::GoalHa
   recovery_action_.cancel(goal_handle);
 }
 
-void AbstractNavigationServer::callActionMoveBase(ActionServerMoveBase::GoalHandle goal_handle)
+void AbstractNavigationServer::callActionNavigate(ActionServerNavigate::GoalHandle goal_handle)
 {
-  ROS_INFO_STREAM_NAMED("move_base", "Start action \"move_base\"");
-  move_base_action_.start(goal_handle);
+  ROS_INFO_STREAM_NAMED("navigate", "Start action \"navigate\"");
+  navigate_action_.start(goal_handle);
 }
 
-void AbstractNavigationServer::cancelActionMoveBase(ActionServerMoveBase::GoalHandle goal_handle)
+void AbstractNavigationServer::cancelActionNavigate(ActionServerNavigate::GoalHandle goal_handle)
 {
-  ROS_INFO_STREAM_NAMED("move_base", "Cancel action \"move_base\"");
-  move_base_action_.cancel();
+  ROS_INFO_STREAM_NAMED("navigate", "Cancel action \"navigate\"");
+  navigate_action_.cancel();
 }
 
 mbf_abstract_nav::AbstractPlannerExecution::Ptr AbstractNavigationServer::newPlannerExecution(
@@ -342,7 +342,7 @@ void AbstractNavigationServer::startActionServers()
   action_server_get_path_ptr_->start();
   action_server_exe_path_ptr_->start();
   action_server_recovery_ptr_->start();
-  action_server_move_base_ptr_->start();
+  action_server_navigate_ptr_->start();
 }
 
 void AbstractNavigationServer::startDynamicReconfigureServer()
@@ -373,8 +373,7 @@ void AbstractNavigationServer::reconfigure(
   planner_action_.reconfigureAll(config, level);
   controller_action_.reconfigureAll(config, level);
   recovery_action_.reconfigureAll(config, level);
-  move_base_action_.reconfigure(config, level);
-
+  navigate_action_.reconfigure(config, level);
   last_config_ = config;
 }
 
@@ -382,7 +381,7 @@ void AbstractNavigationServer::stop(){
   planner_action_.cancelAll();
   controller_action_.cancelAll();
   recovery_action_.cancelAll();
-  move_base_action_.cancel();
+  navigate_action_.cancel();
 }
 
 } /* namespace mbf_abstract_nav */
