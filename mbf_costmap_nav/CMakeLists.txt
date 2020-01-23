@@ -6,10 +6,12 @@ find_package(catkin REQUIRED
   base_local_planner
   dynamic_reconfigure
   geometry_msgs
+  forklift_interfaces
   mbf_abstract_nav
   mbf_costmap_core
   mbf_msgs
   mbf_utility
+  rr_path_follower
   nav_core
   nav_msgs
   roscpp
@@ -38,10 +40,12 @@ catkin_package(
   base_local_planner
   dynamic_reconfigure
   geometry_msgs
+  forklift_interfaces
   mbf_abstract_nav
   mbf_costmap_core
   mbf_msgs
   mbf_utility
+  rr_path_follower
   nav_core
   nav_msgs
   pluginlib

@@ -83,11 +83,13 @@ class NavigateAction
 
   void actionExePathFeedback(const mbf_msgs::ExePathFeedbackConstPtr &feedback);
 
-  void getSplitPath(
+  bool getSplitPath(
       const forklift_interfaces::NavigatePath &plan,
-      const forklift_interfaces::NavigatePath &result);
+      std::vector<forklift_interfaces::NavigatePath> &result);
 
   void actionExePathActive();
+
+  void startNavigate();
 
   void actionExePathDone(
       const actionlib::SimpleClientGoalState &state,
@@ -102,10 +104,11 @@ class NavigateAction
   void actionSpinTurnDone(
       const actionlib::SimpleClientGoalState &state,
       const aifl_msg::SpinTurnResultConstPtr &result);
+  
 
 
   mbf_msgs::ExePathGoal exe_path_goal_;
-  mbf_msgs::GetPathGoal get_path_goal_;
+  forklift_interfaces::NavigatePath get_path_goal_;
   aifl_msg::SpinTurnGoal spin_turn_goal_;
 
 
@@ -113,6 +116,8 @@ class NavigateAction
   ros::Time last_oscillation_reset_;
 
   ros::Duration oscillation_timeout_;
+
+  std::vector<forklift_interfaces::NavigatePath> path_segments_;
 
   double oscillation_distance_;
 
@@ -143,7 +148,8 @@ class NavigateAction
   enum NavigateActionState
   {
     NONE,
-    GET_PATH,
+    SPLIT_PATH,
+    NAVIGATE,
     EXE_PATH,
     SPIN_TURN,
     OSCILLATING,

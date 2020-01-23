@@ -65,6 +65,7 @@ AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
       recovery_action_(name_action_recovery, robot_info_),
       navigate_action_(name_action_navigate, robot_info_)
 {
+  ROS_INFO("Abstract navigation server");
   ros::NodeHandle nh;
 
   // oscillation timeout and distance

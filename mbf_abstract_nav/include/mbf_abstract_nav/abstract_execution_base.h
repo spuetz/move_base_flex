@@ -43,6 +43,7 @@
 #include <boost/thread.hpp>
 #include <boost/chrono/duration.hpp>
 #include <boost/chrono/thread_clock.hpp>
+#include <forklift_interfaces/Checkpoint.h>
 
 namespace mbf_abstract_nav
 {
@@ -91,6 +92,12 @@ class AbstractExecutionBase
    * @brief Optional implementation-specific cleanup function, called right after execution.
    */
   virtual void postRun() { };
+
+    /**
+   * @brief Requests the planner to give feedback for the current plan
+   * @return Returns the id of last checkpoint covered and the checkpoint targeting
+   */
+  virtual std::pair<uint32_t, uint32_t> getFeedback() { };
 
 protected:
   virtual void run() = 0;

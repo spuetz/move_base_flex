@@ -50,7 +50,7 @@ NavigateAction::NavigateAction(const std::string &name,
                                const RobotInformation &robot_info)
   :  name_(name), robot_info_(robot_info), private_nh_("~"),
      action_client_exe_path_(private_nh_, "exe_path"),
-     action_client_spin_turn_(private_nh_, "spin_turn"),
+     action_client_spin_turn_("spin_turn"),
      oscillation_timeout_(0),
      oscillation_distance_(0),
      action_state_(NONE),
@@ -83,11 +83,12 @@ void NavigateAction::cancel()
   {
     action_client_spin_turn_.cancelGoal();
   }
+
 }
 
 void NavigateAction::start(GoalHandle &goal_handle)
 {
-  action_state_ = GET_PATH;
+  action_state_ = SPLIT_PATH;
 
   goal_handle.setAccepted();
 
@@ -105,6 +106,8 @@ void NavigateAction::start(GoalHandle &goal_handle)
   ros::Duration connection_timeout(1.0);
 
   last_oscillation_reset_ = ros::Time::now();
+
+  path_segments_.clear();
 
 
   geometry_msgs::PoseStamped robot_pose;
@@ -131,7 +134,49 @@ void NavigateAction::start(GoalHandle &goal_handle)
   }
 
   // call get_path action server to get a first plan
+
+  bool split_result;
+  split_result = getSplitPath(plan, path_segments_);
+
+  if(!split_result)
+  {
+    ROS_ERROR_STREAM_NAMED("navigate", "Path provided was empty!");
+    navigate_result.remarks = "Empty path provided!";
+    navigate_result.status = forklift_interfaces::NavigateResult::INVALID_PATH;
+    goal_handle.setAborted(navigate_result, navigate_result.remarks);
+    return;
+  }
+
+  startNavigate();
+
+
   
+}
+
+void NavigateAction::startNavigate()
+{
+  action_state_ = NAVIGATE;
+  while (action_state_ != SUCCEEDED || action_state_ != FAILED)
+  {
+    switch (action_state_)
+    {
+    case NAVIGATE:
+      /* code */
+      break;
+    case EXE_PATH:
+      /* code */
+      break;
+    case SPIN_TURN:
+      /* code */
+      break;
+    case OSCILLATING:
+      /* code */
+      break; 
+    
+    default:
+      break;
+    }
+  }
 }
 
 void NavigateAction::actionExePathActive()
@@ -148,6 +193,8 @@ void NavigateAction::actionExePathFeedback(
   navigate_feedback_.dist_to_goal = feedback->dist_to_goal;
   navigate_feedback_.current_pose = feedback->current_pose;
   navigate_feedback_.velocity = feedback->velocity;
+  navigate_feedback_.last_checkpoint = feedback->last_checkpoint;
+  navigate_feedback_.target_checkpoint = feedback->target_checkpoint;
   robot_pose_ = feedback->current_pose;
   goal_handle_.publishFeedback(navigate_feedback_);
 
@@ -184,6 +231,63 @@ void NavigateAction::actionExePathFeedback(
   }
 }
 
+  bool NavigateAction::getSplitPath(
+      const forklift_interfaces::NavigatePath &plan,
+      std::vector<forklift_interfaces::NavigatePath> &result)
+  {
+    ROS_INFO_STREAM_NAMED("navigate","Splitting the path!");
+    if(plan.checkpoints.size()<1)
+    {
+      return false;
+    }
+    forklift_interfaces::NavigatePath segment;
+
+    for (size_t i = 0 ; i < plan.checkpoints.size(); i++)
+    {
+      
+      segment.header = plan.header;
+      segment.xy_goal_tolerance = plan.xy_goal_tolerance;
+      segment.yaw_goal_tolerance = plan.xy_goal_tolerance;
+
+      if (i<1)
+      {
+        segment.checkpoints.push_back(plan.checkpoints[i]);
+      }
+      else if (i<plan.checkpoints.size()-1)
+      {
+        if(!plan.checkpoints[i].info.spin_turn)
+        {
+          segment.checkpoints.push_back(plan.checkpoints[i]);
+        }
+        else
+        {
+          segment.checkpoints.push_back(plan.checkpoints[i]);
+          result.push_back(segment);
+          segment.checkpoints.clear();
+          forklift_interfaces::Checkpoint checkpoint = plan.checkpoints[i];
+          checkpoint.info.spin_turn = false;
+          segment.checkpoints.push_back(checkpoint);
+        }
+      }
+      else
+      {
+        segment.checkpoints.push_back(plan.checkpoints[i]);
+        result.push_back(segment);
+        segment.checkpoints.clear();
+      }
+    }
+
+    for(const auto& segment : result)
+    {
+      ROS_INFO_STREAM_NAMED("navigate","Segment:");
+      for (const auto& point : segment.checkpoints)
+      {
+          ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "," << static_cast<int>(point.info.spin_turn)<< "]");
+      }
+    }
+
+    return true;
+  }
 
 void NavigateAction::actionExePathDone(
     const actionlib::SimpleClientGoalState &state,

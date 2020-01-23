@@ -43,8 +43,8 @@
 
 #include <nav_core/base_local_planner.h>
 #include "mbf_costmap_core/costmap_controller.h"
-
 #include <mbf_utility/types.h>
+#include <forklift_interfaces/Checkpoint.h>
 
 namespace mbf_nav_core_wrapper {
   /**
@@ -92,6 +92,19 @@ namespace mbf_nav_core_wrapper {
        * @return True if the plan was updated successfully, false otherwise
        */
       virtual bool setPlan(const std::vector<geometry_msgs::PoseStamped> &plan);
+
+            /**
+       * @brief  Set the plan that the local planner is following
+       * @param plan The plan to pass to the local planner
+       * @return True if the plan was updated successfully, false otherwise
+       */
+      virtual bool setPlan(const std::vector<forklift_interfaces::Checkpoint> &plan);
+
+      /**
+       * @brief Requests the planner to give feedback for the current plan
+       * @return Returns the id of last checkpoint covered and the checkpoint targeting
+       */
+      virtual std::pair<uint32_t, uint32_t> getFeedback();
 
       /**
        * @brief Requests the planner to cancel, e.g. if it takes too much time
