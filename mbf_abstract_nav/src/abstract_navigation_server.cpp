@@ -191,7 +191,6 @@ void AbstractNavigationServer::cancelActionGetPath(ActionServerGetPath::GoalHand
 void AbstractNavigationServer::callActionNavigate(ActionServerNavigate::GoalHandle goal_handle)
 {
   const forklift_interfaces::NavigateGoal &goal = *(goal_handle.getGoal().get());
-  ROS_INFO("Controller handle");
   std::string controller_name;
   if(!controller_plugin_manager_.getLoadedNames().empty())
   {

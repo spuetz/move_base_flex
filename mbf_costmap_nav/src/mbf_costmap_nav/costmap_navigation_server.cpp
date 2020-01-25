@@ -137,11 +137,11 @@ mbf_abstract_core::AbstractPlanner::Ptr CostmapNavigationServer::loadPlannerPlug
     planner_ptr = boost::static_pointer_cast<mbf_abstract_core::AbstractPlanner>(
         planner_plugin_loader_.createInstance(planner_type));
     std::string planner_name = planner_plugin_loader_.getName(planner_type);
-    ROS_DEBUG_STREAM("mbf_costmap_core-based planner plugin " << planner_name << " loaded.");
+    ROS_INFO_STREAM("mbf_costmap_core-based planner plugin " << planner_name << " loaded.");
   }
   catch (const pluginlib::PluginlibException &ex_mbf_core)
   {
-    ROS_DEBUG_STREAM("Failed to load the " << planner_type << " planner as a mbf_costmap_core-based plugin."
+    ROS_INFO_STREAM("Failed to load the " << planner_type << " planner as a mbf_costmap_core-based plugin."
                                           << " Try to load as a nav_core-based plugin. " << ex_mbf_core.what());
     try
     {
@@ -149,7 +149,7 @@ mbf_abstract_core::AbstractPlanner::Ptr CostmapNavigationServer::loadPlannerPlug
       boost::shared_ptr<nav_core::BaseGlobalPlanner> nav_core_planner_ptr = nav_core_planner_plugin_loader_.createInstance(planner_type);
       planner_ptr = boost::make_shared<mbf_nav_core_wrapper::WrapperGlobalPlanner>(nav_core_planner_ptr);
       std::string planner_name = nav_core_planner_plugin_loader_.getName(planner_type);
-      ROS_DEBUG_STREAM("nav_core-based planner plugin " << planner_name << " loaded");
+      ROS_DEBUG_STREAM("nav_core-based planner plugin " << planner_name<< " loaded");
     }
     catch (const pluginlib::PluginlibException &ex_nav_core)
     {
@@ -189,11 +189,11 @@ mbf_abstract_core::AbstractController::Ptr CostmapNavigationServer::loadControll
   {
     controller_ptr = controller_plugin_loader_.createInstance(controller_type);
     std::string controller_name = controller_plugin_loader_.getName(controller_type);
-    ROS_DEBUG_STREAM("mbf_costmap_core-based controller plugin " << controller_name << " loaded.");
+    ROS_INFO_STREAM("mbf_costmap_core-based controller plugin " << controller_name << " loaded.");
   }
   catch (const pluginlib::PluginlibException &ex_mbf_core)
   {
-    ROS_DEBUG_STREAM("Failed to load the " << controller_type << " controller as a mbf_costmap_core-based plugin;"
+    ROS_INFO_STREAM("Failed to load the " << controller_type << " controller as a mbf_costmap_core-based plugin;"
                                           << "  we will retry to load as a nav_core-based plugin. " << ex_mbf_core.what());
     try
     {
@@ -217,7 +217,7 @@ bool CostmapNavigationServer::initializeControllerPlugin(
     const std::string& name,
     const mbf_abstract_core::AbstractController::Ptr& controller_ptr)
 {
-  ROS_DEBUG_STREAM("Initialize controller \"" << name << "\".");
+  ROS_INFO_STREAM("Initialize controller \"" << name << "\".");
 
   if (!tf_listener_ptr_)
   {
@@ -234,7 +234,7 @@ bool CostmapNavigationServer::initializeControllerPlugin(
   mbf_costmap_core::CostmapController::Ptr costmap_controller_ptr
       = boost::static_pointer_cast<mbf_costmap_core::CostmapController>(controller_ptr);
   costmap_controller_ptr->initialize(name, tf_listener_ptr_.get(), local_costmap_ptr_.get());
-  ROS_DEBUG_STREAM("Controller plugin \"" << name << "\" initialized.");
+  ROS_INFO_STREAM("Controller plugin \"" << name << "\" initialized.");
   return true;
 }
 
