@@ -292,6 +292,8 @@ namespace mbf_abstract_nav
 
         if (cancel_)
         {
+          publishStopVelocity();
+          boost::this_thread::sleep_for(calling_duration_);
           publishZeroVelocity(); // command the robot to stop on canceling navigation
           setState(CANCELED);
           condition_.notify_all();
@@ -453,8 +455,22 @@ namespace mbf_abstract_nav
 
   void AbstractControllerExecution::publishZeroVelocity()
   {
+    ROS_INFO("Publishing zero velocity");
     geometry_msgs::Twist cmd_vel;
     cmd_vel.linear.x = 0;
+    cmd_vel.linear.y = 0;
+    cmd_vel.linear.z = 0;
+    cmd_vel.angular.x = 0;
+    cmd_vel.angular.y = 0;
+    cmd_vel.angular.z = 0;
+    vel_pub_.publish(cmd_vel);
+  }
+
+  void AbstractControllerExecution::publishStopVelocity()
+  {
+    ROS_INFO("Publishing stop velocity");
+    geometry_msgs::Twist cmd_vel;
+    cmd_vel.linear.x = 0.08;
     cmd_vel.linear.y = 0;
     cmd_vel.linear.z = 0;
     cmd_vel.angular.x = 0;

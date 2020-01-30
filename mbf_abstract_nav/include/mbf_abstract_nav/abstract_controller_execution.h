@@ -259,6 +259,10 @@ namespace mbf_abstract_nav
 
   private:
 
+    /**
+     * @brief Publishes a velocity command with zero values to stop the robot.
+     */
+    void publishStopVelocity();
 
     /**
      * @brief Publishes a velocity command with zero values to stop the robot.
