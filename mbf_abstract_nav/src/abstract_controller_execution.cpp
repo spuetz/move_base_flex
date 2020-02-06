@@ -295,7 +295,7 @@ namespace mbf_abstract_nav
           static int i;
           while (i < 40)
           {
-            publishZeroVelocity();
+            publishStopVelocity();
             boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
             i++;
           }
