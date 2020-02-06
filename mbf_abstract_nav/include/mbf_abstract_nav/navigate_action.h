@@ -89,7 +89,11 @@ class NavigateAction
 
   void actionExePathActive();
 
+  void actionSpinTurnActive();
+
   void startNavigate();
+
+  void runNavigate();
 
   void actionExePathDone(
       const actionlib::SimpleClientGoalState &state,
@@ -104,6 +108,8 @@ class NavigateAction
   void actionSpinTurnDone(
       const actionlib::SimpleClientGoalState &state,
       const aifl_msg::SpinTurnResultConstPtr &result);
+  
+  double getSpinAngle(geometry_msgs::Quaternion orientation);
   
 
 
@@ -147,7 +153,8 @@ class NavigateAction
 
   enum NavigateActionState
   {
-    NONE,
+    ACTIVE,
+    IDLE,
     SPLIT_PATH,
     NAVIGATE,
     EXE_PATH,
