@@ -74,6 +74,9 @@ void NavigateAction::cancel()
 {
   action_state_ = CANCELED;
 
+  ROS_INFO_STREAM_NAMED ("navigate", "Cancel called for navigate");
+  goal_handle_.setCanceled();
+
   if(!action_client_exe_path_.getState().isDone())
   {
     action_client_exe_path_.cancelGoal();
@@ -83,6 +86,7 @@ void NavigateAction::cancel()
   {
     action_client_spin_turn_.cancelGoal();
   }
+  
 
 }
 
@@ -125,8 +129,7 @@ void NavigateAction::start(GoalHandle &goal_handle)
   if (!action_client_exe_path_.waitForServer(connection_timeout) ||
       !action_client_spin_turn_.waitForServer(connection_timeout))
   {
-    ROS_ERROR_STREAM_NAMED("navigate", "Could not connect to one or more of navigate actions:"
-        "\"get_path\" , \"exe_path\", \"spin_turn \"!");
+    ROS_ERROR_STREAM_NAMED("navigate", "Could not connect to one or more of navigate actions: exe_path, spin_turn!");
     navigate_result.status = forklift_interfaces::NavigateResult::INTERNAL_ERROR;
     navigate_result.remarks = "Could not connect to the navigate actions!";
     goal_handle.setAborted(navigate_result, navigate_result.remarks);
@@ -162,7 +165,6 @@ void NavigateAction::startNavigate()
     {
     case NAVIGATE:
       runNavigate();
-      /* code */
       break;
     case EXE_PATH:
       action_client_exe_path_.sendGoal(
@@ -173,11 +175,10 @@ void NavigateAction::startNavigate()
       action_state_ = ACTIVE;
       break;
     case SPIN_TURN:
-      /* code */
-
-      action_client_spin_turn_.sendGoal(spin_turn_goal_,
-                                        boost::bind(&NavigateAction::actionSpinTurnDone, this, _1, _2),
-                                        boost::bind(&NavigateAction::actionSpinTurnActive, this));
+      action_client_spin_turn_.sendGoal(
+        spin_turn_goal_,
+        boost::bind(&NavigateAction::actionSpinTurnDone, this, _1, _2),
+        boost::bind(&NavigateAction::actionSpinTurnActive, this));
       action_state_ = ACTIVE;
       break;
     case OSCILLATING:
@@ -201,9 +202,19 @@ void NavigateAction::runNavigate()
     if(path_segments_.front().checkpoints.front().spin_turn)
     {
       const auto orientation = path_segments_.front().checkpoints.front().pose.pose.orientation;
-      double yaw = getSpinAngle(orientation);
+      geometry_msgs::PoseStamped robot_pose;
+      robot_info_.getRobotPose(robot_pose);
+      double min_angle = mbf_utility::angle(robot_pose , path_segments_.front().checkpoints.front().pose);
+      double yaw_goal = getSpinAngle(orientation);
+      ROS_INFO_STREAM("min_angle: " << min_angle);
+      if (fabs(min_angle)<10.0)
+      {
+        path_segments_.front().checkpoints.front().spin_turn = false;
+        action_state_ = NAVIGATE;
+        return;
+      }
 
-      spin_turn_goal_.angle = yaw;
+      spin_turn_goal_.angle = yaw_goal;
       action_state_ = SPIN_TURN;
       path_segments_.front().checkpoints.front().spin_turn = false;
       return;
@@ -212,7 +223,7 @@ void NavigateAction::runNavigate()
     {
       for (const auto& point : path_segments_.front().checkpoints)
       {
-          ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "," << static_cast<int>(point.spin_turn)<< "]");
+          ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]");
       }
       exe_path_goal_.path = path_segments_.front();
 
@@ -299,7 +310,7 @@ bool NavigateAction::getSplitPath(
       const forklift_interfaces::NavigatePath &plan,
       std::vector<forklift_interfaces::NavigatePath> &result)
 {
-  ROS_INFO_STREAM_NAMED("navigate","Splitting the path!");
+  ROS_INFO_STREAM_NAMED("navigate","Splitting the path");
   if(plan.checkpoints.size()<1)
   {
     return false;
@@ -343,10 +354,10 @@ bool NavigateAction::getSplitPath(
 
   for(const auto& segment : result)
   {
-    ROS_INFO_STREAM_NAMED("navigate","Segment:");
+    ROS_INFO_STREAM_NAMED("navigate","Split segments:");
     for (const auto& point : segment.checkpoints)
     {
-        ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "," << static_cast<int>(point.spin_turn)<< "]");
+        ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]" << "spin turn:" << static_cast<int>(point.spin_turn));
     }
   }
 
