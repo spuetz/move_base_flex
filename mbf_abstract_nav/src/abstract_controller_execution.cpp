@@ -292,14 +292,14 @@ namespace mbf_abstract_nav
 
         if (cancel_)
         {
-          static int i;
-          while (i < 40)
-          {
-            publishStopVelocity();
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
-            i++;
-          }
-          i = 0;
+          // static int i;
+          // while (i < 40)
+          // {
+          //   publishStopVelocity();
+          //   boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
+          //   i++;
+          // }
+          // i = 0;
           publishZeroVelocity(); // command the robot to stop on canceling navigation
           setState(CANCELED);
           condition_.notify_all();
