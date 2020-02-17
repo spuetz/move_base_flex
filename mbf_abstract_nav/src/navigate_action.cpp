@@ -175,6 +175,7 @@ void NavigateAction::startNavigate()
       action_state_ = ACTIVE;
       break;
     case SPIN_TURN:
+      
       action_client_spin_turn_.sendGoal(
         spin_turn_goal_,
         boost::bind(&NavigateAction::actionSpinTurnDone, this, _1, _2),
@@ -205,7 +206,10 @@ void NavigateAction::runNavigate()
       geometry_msgs::PoseStamped robot_pose;
       robot_info_.getRobotPose(robot_pose);
       double min_angle = mbf_utility::angle(robot_pose , path_segments_.front().checkpoints.front().pose);
+      min_angle = min_angle * 180 / M_PI ;
       double yaw_goal = getSpinAngle(orientation);
+      double curr_yaw = getSpinAngle(robot_pose.pose.orientation);
+      ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", " << curr_yaw);
       ROS_INFO_STREAM("min_angle: " << min_angle);
       if (fabs(min_angle)<10.0)
       {
@@ -235,7 +239,7 @@ void NavigateAction::runNavigate()
   {
     forklift_interfaces::NavigateResult navigate_result;
     navigate_result.status = forklift_interfaces::NavigateResult::SUCCESS;
-    navigate_result.remarks = "Navigate action completed successfully!";
+    navigate_result.remarks = "Action navigate completed successfully!";
     navigate_result.final_pose = robot_pose_;
     ROS_INFO_STREAM_NAMED("navigate", "Navigate action completed successfully");
     goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
@@ -316,6 +320,30 @@ bool NavigateAction::getSplitPath(
     return false;
   }
   forklift_interfaces::NavigatePath segment;
+
+  if (plan.checkpoints.size()==1)
+  {
+    segment.header = plan.header;
+    segment.xy_goal_tolerance = plan.xy_goal_tolerance;
+    segment.yaw_goal_tolerance = plan.xy_goal_tolerance;
+    geometry_msgs::PoseStamped robot_pose;
+    robot_info_.getRobotPose(robot_pose);
+    forklift_interfaces::Checkpoint start;
+    start.pose = robot_pose;
+    start.spin_turn = false;
+    segment.checkpoints.push_back(start);
+    segment.checkpoints.push_back(plan.checkpoints[0]);
+    result.push_back(segment);
+    segment.checkpoints.clear();
+    ROS_INFO_STREAM_NAMED("navigate","Single checkpoint");
+    for (const auto& point : segment.checkpoints)
+    {
+        ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]" << "spin turn:" << static_cast<int>(point.spin_turn));
+    }
+
+
+    return true;
+  }
 
   for (size_t i = 0 ; i < plan.checkpoints.size(); i++)
   {
@@ -420,18 +448,36 @@ void NavigateAction::actionExePathDone(
     case actionlib::SimpleClientGoalState::SUCCEEDED:
       if(path_segments_.front().checkpoints.back().spin_turn)
       {
-        const auto orientation = path_segments_.front().checkpoints.front().pose.pose.orientation;        
-        double yaw = getSpinAngle(orientation);
-        spin_turn_goal_.angle = yaw;
-        action_state_ = SPIN_TURN; 
-        path_segments_.erase(path_segments_.begin());
+        const auto orientation = path_segments_.front().checkpoints.back().pose.pose.orientation;
+        geometry_msgs::PoseStamped robot_pose;
+        robot_info_.getRobotPose(robot_pose);
+        double min_angle = mbf_utility::angle(robot_pose , path_segments_.front().checkpoints.back().pose);
+        min_angle = min_angle * 180 / M_PI ;
+        double yaw_goal = getSpinAngle(orientation);
+        double curr_yaw = getSpinAngle(robot_pose.pose.orientation);
+        ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", " << curr_yaw);
+        ROS_INFO_STREAM("min_angle: " << min_angle);
+        action_state_ = SPIN_TURN;
+        spin_turn_goal_.angle = yaw_goal;
+        if (fabs(min_angle)<10.0)
+        {
+          action_state_ = NAVIGATE;
+        }   
+        
       }
       else
       {
-        path_segments_.erase(path_segments_.begin());
         action_state_ = NAVIGATE;
       }
 
+      if(path_segments_.empty())
+      {
+        navigate_result.remarks = "Action navigate completed successfully!";
+        ROS_INFO_STREAM_NAMED("navigate", "Navigate action completed successfully");
+        goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
+        action_state_ = SUCCEEDED;
+      }
+      path_segments_.erase(path_segments_.begin());
       break;
 
     case actionlib::SimpleClientGoalState::ABORTED:
