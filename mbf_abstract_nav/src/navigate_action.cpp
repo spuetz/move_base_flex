@@ -209,7 +209,7 @@ void NavigateAction::runNavigate()
       min_angle = min_angle * 180 / M_PI ;
       double yaw_goal = getSpinAngle(orientation);
       double curr_yaw = getSpinAngle(robot_pose.pose.orientation);
-      ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", " << curr_yaw);
+      ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", Current yaw: " << curr_yaw);
       ROS_INFO_STREAM("min_angle: " << min_angle);
       if (fabs(min_angle)<10.0)
       {
@@ -334,13 +334,13 @@ bool NavigateAction::getSplitPath(
     segment.checkpoints.push_back(start);
     segment.checkpoints.push_back(plan.checkpoints[0]);
     result.push_back(segment);
-    segment.checkpoints.clear();
+    
     ROS_INFO_STREAM_NAMED("navigate","Single checkpoint");
     for (const auto& point : segment.checkpoints)
     {
         ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]" << "spin turn:" << static_cast<int>(point.spin_turn));
     }
-
+    segment.checkpoints.clear();
 
     return true;
   }
