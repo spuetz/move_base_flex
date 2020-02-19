@@ -136,9 +136,10 @@ void NavigateAction::start(GoalHandle &goal_handle)
     return;
   }
 
-  // call get_path action server to get a first plan
 
   bool split_result;
+
+  // call function to split path between spin turns 
   split_result = getSplitPath(plan, path_segments_);
 
   if(!split_result)
@@ -150,6 +151,7 @@ void NavigateAction::start(GoalHandle &goal_handle)
     return;
   }
 
+  // start navigating with the split path
   startNavigate();
 
 
@@ -164,9 +166,11 @@ void NavigateAction::startNavigate()
     switch (action_state_)
     {
     case NAVIGATE:
+      // state for executing next segment in the plan
       runNavigate();
       break;
     case EXE_PATH:
+      // state for executing current segment
       action_client_exe_path_.sendGoal(
           exe_path_goal_,
           boost::bind(&NavigateAction::actionExePathDone, this, _1, _2),
@@ -175,7 +179,7 @@ void NavigateAction::startNavigate()
       action_state_ = ACTIVE;
       break;
     case SPIN_TURN:
-      
+      // state for executing spin turn
       action_client_spin_turn_.sendGoal(
         spin_turn_goal_,
         boost::bind(&NavigateAction::actionSpinTurnDone, this, _1, _2),
@@ -195,22 +199,32 @@ void NavigateAction::startNavigate()
 
 void NavigateAction::runNavigate()
 {
+  
   action_state_ = FAILED;
   ROS_INFO_STREAM_NAMED("navigate", "Segments remaning: " << path_segments_.size());
+
   if(!path_segments_.empty())
   {
+
     ROS_INFO_STREAM_NAMED("navigate","Spin turn: "<< static_cast<int>(path_segments_.front().checkpoints.front().spin_turn));
+    //check if the first checkpoint needs spin turn
     if(path_segments_.front().checkpoints.front().spin_turn)
     {
+
       const auto orientation = path_segments_.front().checkpoints.front().pose.pose.orientation;
       geometry_msgs::PoseStamped robot_pose;
+      
       robot_info_.getRobotPose(robot_pose);
+      
       double min_angle = mbf_utility::angle(robot_pose , path_segments_.front().checkpoints.front().pose);
       min_angle = min_angle * 180 / M_PI ;
+      
       double yaw_goal = getSpinAngle(orientation);
       double curr_yaw = getSpinAngle(robot_pose.pose.orientation);
+      
       ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", Current yaw: " << curr_yaw);
       ROS_INFO_STREAM("min_angle: " << min_angle);
+      
       if (fabs(min_angle)<10.0)
       {
         path_segments_.front().checkpoints.front().spin_turn = false;
@@ -219,8 +233,11 @@ void NavigateAction::runNavigate()
       }
 
       spin_turn_goal_.angle = yaw_goal;
+      
       action_state_ = SPIN_TURN;
-      path_segments_.front().checkpoints.front().spin_turn = false;
+      
+      path_segments_.front().checkpoints.front().spin_turn = false; 
+      
       return;
     }
     else
@@ -237,6 +254,7 @@ void NavigateAction::runNavigate()
   }
   else
   {
+
     forklift_interfaces::NavigateResult navigate_result;
     navigate_result.status = forklift_interfaces::NavigateResult::SUCCESS;
     navigate_result.remarks = "Action navigate completed successfully!";
@@ -314,28 +332,39 @@ bool NavigateAction::getSplitPath(
       const forklift_interfaces::NavigatePath &plan,
       std::vector<forklift_interfaces::NavigatePath> &result)
 {
+
   ROS_INFO_STREAM_NAMED("navigate","Splitting the path");
+  //check if incoming path is empty
   if(plan.checkpoints.size()<1)
   {
     return false;
   }
+  
   forklift_interfaces::NavigatePath segment;
-
+  
+  //single checkpoint case
   if (plan.checkpoints.size()==1)
   {
+    
     segment.header = plan.header;
     segment.xy_goal_tolerance = plan.xy_goal_tolerance;
     segment.yaw_goal_tolerance = plan.xy_goal_tolerance;
+    
     geometry_msgs::PoseStamped robot_pose;
+    
     robot_info_.getRobotPose(robot_pose);
+    
     forklift_interfaces::Checkpoint start;
+    
     start.pose = robot_pose;
     start.spin_turn = false;
     segment.checkpoints.push_back(start);
     segment.checkpoints.push_back(plan.checkpoints[0]);
+    
     result.push_back(segment);
     
     ROS_INFO_STREAM_NAMED("navigate","Single checkpoint");
+    
     for (const auto& point : segment.checkpoints)
     {
         ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]" << "spin turn:" << static_cast<int>(point.spin_turn));
@@ -367,8 +396,10 @@ bool NavigateAction::getSplitPath(
         segment.checkpoints.push_back(plan.checkpoints[i]);
         result.push_back(segment);
         segment.checkpoints.clear();
+        
         forklift_interfaces::Checkpoint checkpoint = plan.checkpoints[i];
         checkpoint.spin_turn = false;
+        
         segment.checkpoints.push_back(checkpoint);
       }
     }
@@ -446,22 +477,29 @@ void NavigateAction::actionExePathDone(
   switch (state.state_)
   {
     case actionlib::SimpleClientGoalState::SUCCEEDED:
+      // check if we need a spin turn at the last checkpoint
       if(path_segments_.front().checkpoints.back().spin_turn)
       {
         const auto orientation = path_segments_.front().checkpoints.back().pose.pose.orientation;
         geometry_msgs::PoseStamped robot_pose;
+        
         robot_info_.getRobotPose(robot_pose);
+        
         double min_angle = mbf_utility::angle(robot_pose , path_segments_.front().checkpoints.back().pose);
         min_angle = min_angle * 180 / M_PI ;
+        
         double yaw_goal = getSpinAngle(orientation);
         double curr_yaw = getSpinAngle(robot_pose.pose.orientation);
+        
         ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", " << curr_yaw);
         ROS_INFO_STREAM("min_angle: " << min_angle);
-        action_state_ = SPIN_TURN;
+        
+        action_state_ = SPIN_TURN;   //set state to execute spin
         spin_turn_goal_.angle = yaw_goal;
+        
         if (fabs(min_angle)<10.0)
         {
-          action_state_ = NAVIGATE;
+          action_state_ = NAVIGATE; //set state to navigate because angle below spin threshold
         }   
         
       }
@@ -477,7 +515,7 @@ void NavigateAction::actionExePathDone(
         goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
         action_state_ = SUCCEEDED;
       }
-      path_segments_.erase(path_segments_.begin());
+      path_segments_.erase(path_segments_.begin()); //erase the done segment
       break;
 
     case actionlib::SimpleClientGoalState::ABORTED:
