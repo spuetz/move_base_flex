@@ -16,6 +16,7 @@ find_package(catkin REQUIRED
   roscpp
   std_msgs
   std_srvs
+  rr_path_follower
   tf
   xmlrpcpp
   )
@@ -49,6 +50,7 @@ catkin_package(
       roscpp
       std_msgs
       std_srvs
+      rr_path_follower
       tf
       xmlrpcpp
   DEPENDS Boost

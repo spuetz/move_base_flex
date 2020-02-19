@@ -40,6 +40,7 @@
 
 #include "mbf_abstract_nav/abstract_controller_execution.h"
 #include <mbf_msgs/ExePathResult.h>
+#include <rr_path_follower/path_follower_ros.hpp>
 
 namespace mbf_abstract_nav
 {
@@ -271,6 +272,7 @@ namespace mbf_abstract_nav
 
     // init plan
     std::vector<forklift_interfaces::Checkpoint> plan;
+    std::vector<geometry_msgs::PoseStamped> plan_poses;
     if (!hasNewPlan())
     {
       setState(NO_PLAN);
@@ -319,8 +321,23 @@ namespace mbf_abstract_nav
             return;
           }
 
+          bool set_plan = false;
+          rr_path_follower::PathFollowerROS* path_follower = dynamic_cast<rr_path_follower::PathFollowerROS*>(controller_.get()); //TODO: use dynamic_pointer_cast
+          if (path_follower)
+          {
+            set_plan = controller_->setPlan(plan);
+          }
+          else  
+          {
+            for (const auto checkpoint: plan) 
+            {
+              plan_poses.push_back(checkpoint.pose);
+            }
+            set_plan = controller_->setPlan(plan_poses);
+          }
+
           // check if plan could be set
-          if (!controller_->setPlan(plan))
+          if (!set_plan)
           {
             setState(INVALID_PLAN);
             condition_.notify_all();

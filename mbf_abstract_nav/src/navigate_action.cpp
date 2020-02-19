@@ -342,37 +342,7 @@ bool NavigateAction::getSplitPath(
   
   forklift_interfaces::NavigatePath segment;
   
-  //single checkpoint case
-  if (plan.checkpoints.size()==1)
-  {
-    
-    segment.header = plan.header;
-    segment.xy_goal_tolerance = plan.xy_goal_tolerance;
-    segment.yaw_goal_tolerance = plan.xy_goal_tolerance;
-    
-    geometry_msgs::PoseStamped robot_pose;
-    
-    robot_info_.getRobotPose(robot_pose);
-    
-    forklift_interfaces::Checkpoint start;
-    
-    start.pose = robot_pose;
-    start.spin_turn = false;
-    segment.checkpoints.push_back(start);
-    segment.checkpoints.push_back(plan.checkpoints[0]);
-    
-    result.push_back(segment);
-    
-    ROS_INFO_STREAM_NAMED("navigate","Single checkpoint");
-    
-    for (const auto& point : segment.checkpoints)
-    {
-        ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]" << "spin turn:" << static_cast<int>(point.spin_turn));
-    }
-    segment.checkpoints.clear();
 
-    return true;
-  }
 
   for (size_t i = 0 ; i < plan.checkpoints.size(); i++)
   {
@@ -384,6 +354,13 @@ bool NavigateAction::getSplitPath(
     if (i<1)
     {
       segment.checkpoints.push_back(plan.checkpoints[i]);
+      if (plan.checkpoints.size()==1)
+      {
+        result.push_back(segment);
+        ROS_INFO_STREAM_NAMED("navigate", "Single checkpoint:");
+        segment.checkpoints.clear();
+        return true;
+      }
     }
     else if (i<plan.checkpoints.size()-1)
     {
@@ -491,7 +468,7 @@ void NavigateAction::actionExePathDone(
         double yaw_goal = getSpinAngle(orientation);
         double curr_yaw = getSpinAngle(robot_pose.pose.orientation);
         
-        ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", " << curr_yaw);
+        ROS_INFO_STREAM_NAMED("navigate", "Spin goal: " << yaw_goal << ", Current yaw: " << curr_yaw);
         ROS_INFO_STREAM("min_angle: " << min_angle);
         
         action_state_ = SPIN_TURN;   //set state to execute spin
