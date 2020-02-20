@@ -39,6 +39,8 @@
  */
 
 #include <mbf_utility/navigation_utility.h>
+#include <tf2/utils.h>
+#include <angles/angles.h>
 
 #include "mbf_abstract_nav/MoveBaseFlexConfig.h"
 #include "mbf_abstract_nav/navigate_action.h"
@@ -136,11 +138,8 @@ void NavigateAction::start(GoalHandle &goal_handle)
     return;
   }
 
-
-  bool split_result;
-
   // call function to split path between spin turns 
-  split_result = getSplitPath(plan, path_segments_);
+  bool split_result = getSplitPath(plan, path_segments_);
 
   if(!split_result)
   {
@@ -152,10 +151,7 @@ void NavigateAction::start(GoalHandle &goal_handle)
   }
 
   // start navigating with the split path
-  startNavigate();
-
-
-  
+  startNavigate();  
 }
 
 void NavigateAction::startNavigate()
@@ -328,6 +324,32 @@ void NavigateAction::actionExePathFeedback(
   }
 }
 
+
+bool NavigateAction::isSmoothTurnPossible(const forklift_interfaces::Checkpoint& previous, 
+  const forklift_interfaces::Checkpoint& current, const forklift_interfaces::Checkpoint& next)
+{
+  double initial_orientation = tf2::getYaw(previous.pose.pose.orientation);
+  double initial_slope = std::atan2((current.pose.pose.position.y - previous.pose.pose.position.y), 
+    (current.pose.pose.position.x - previous.pose.pose.position.x));
+
+  double orientation = tf2::getYaw(current.pose.pose.orientation);
+  double slope = std::atan2((next.pose.pose.position.y - current.pose.pose.position.y), 
+    (next.pose.pose.position.x - current.pose.pose.position.x));
+
+  // check if robot is facing forwards in both the segments
+  if((std::abs(angles::shortest_angular_distance(initial_orientation, initial_slope)) < 2e-1) &&
+    (std::abs(angles::shortest_angular_distance(orientation, slope)) < 2e-1)) {
+      return true;
+  }
+  
+  // check if robot is facing backwards in both the segments
+  if((std::abs(angles::shortest_angular_distance(initial_orientation, initial_slope+M_PI)) < 2e-1) &&
+    (std::abs(angles::shortest_angular_distance(orientation, slope+M_PI)) < 2e-1)) {
+      return true;
+  }
+  return false;
+}
+
 bool NavigateAction::getSplitPath(
       const forklift_interfaces::NavigatePath &plan,
       std::vector<forklift_interfaces::NavigatePath> &result)
@@ -341,9 +363,6 @@ bool NavigateAction::getSplitPath(
   }
   
   forklift_interfaces::NavigatePath segment;
-  
-
-
   for (size_t i = 0 ; i < plan.checkpoints.size(); i++)
   {
     
@@ -362,14 +381,10 @@ bool NavigateAction::getSplitPath(
         return true;
       }
     }
-    else if (i<plan.checkpoints.size()-1)
+    else if (i<plan.checkpoints.size()-1) // always make sure there is a point back and ahead
     {
-      if(!plan.checkpoints[i].spin_turn)
-      {
-        segment.checkpoints.push_back(plan.checkpoints[i]);
-      }
-      else
-      {
+      if(plan.checkpoints[i].node.spin_turn || (plan.checkpoints[i].spin_turn && 
+          !(isSmoothTurnPossible(plan.checkpoints[i-1], plan.checkpoints[i], plan.checkpoints[i+1])))){
         segment.checkpoints.push_back(plan.checkpoints[i]);
         result.push_back(segment);
         segment.checkpoints.clear();
@@ -378,6 +393,9 @@ bool NavigateAction::getSplitPath(
         checkpoint.spin_turn = false;
         
         segment.checkpoints.push_back(checkpoint);
+      }
+      else {
+        segment.checkpoints.push_back(plan.checkpoints[i]);
       }
     }
     else
@@ -549,14 +567,7 @@ void NavigateAction::actionExePathDone(
 
 double NavigateAction::getSpinAngle(geometry_msgs::Quaternion orientation)
 {
-    tf2::Quaternion qp(orientation.x, orientation.y, orientation.z, orientation.w);
-    tf2::Matrix3x3 mp(qp);
-    double roll, pitch, yaw;
-    mp.getRPY(roll, pitch, yaw);
-
-    yaw = yaw * 180 / M_PI;
-
-    return yaw;
+    return tf2::getYaw(orientation)*180/M_PI;
 }
 
 
