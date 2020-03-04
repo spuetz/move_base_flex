@@ -383,7 +383,8 @@ bool NavigateAction::getSplitPath(
     }
     else if (i<plan.checkpoints.size()-1) // always make sure there is a point back and ahead
     {
-      if(plan.checkpoints[i].node.spin_turn || (plan.checkpoints[i].spin_turn && 
+      bool spin = plan.checkpoints[i].node.spin_turn && plan.checkpoints[i].spin_turn;
+      if(spin || (plan.checkpoints[i].spin_turn && 
           !(isSmoothTurnPossible(plan.checkpoints[i-1], plan.checkpoints[i], plan.checkpoints[i+1])))){
         segment.checkpoints.push_back(plan.checkpoints[i]);
         result.push_back(segment);
