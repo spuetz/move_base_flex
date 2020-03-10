@@ -138,6 +138,7 @@ void NavigateAction::start(GoalHandle &goal_handle)
     return;
   }
 
+
   // call function to split path between spin turns 
   bool split_result = getSplitPath(plan, path_segments_);
 
@@ -176,6 +177,9 @@ void NavigateAction::startNavigate()
       break;
     case SPIN_TURN:
       // state for executing spin turn
+      action_client_spin_turn_.cancelGoal();
+      ros::Duration(0.5).sleep();
+
       action_client_spin_turn_.sendGoal(
         spin_turn_goal_,
         boost::bind(&NavigateAction::actionSpinTurnDone, this, _1, _2),
