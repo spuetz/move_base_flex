@@ -94,6 +94,13 @@ void NavigateAction::cancel()
 
 void NavigateAction::start(GoalHandle &goal_handle)
 {
+  if (action_state_ == ACTIVE)
+  {
+    if(!action_client_spin_turn_.getState().isDone())
+    {
+      action_client_spin_turn_.waitForResult(ros::Duration(30.0));
+    }
+  }
   action_state_ = SPLIT_PATH;
 
   goal_handle.setAccepted();
