@@ -408,7 +408,10 @@ bool NavigateAction::getSplitPath(
     }
     else
     {
-      segment.checkpoints.push_back(plan.checkpoints[i]);
+      ROS_INFO("Plan requires final node spin to be : %d", plan.checkpoints[i].node.spin_turn);
+      forklift_interfaces::Checkpoint checkpoint = plan.checkpoints[i];
+      checkpoint.spin_turn = plan.checkpoints[i].node.spin_turn;
+      segment.checkpoints.push_back(checkpoint);
       result.push_back(segment);
       segment.checkpoints.clear();
     }
