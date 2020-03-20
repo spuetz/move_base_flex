@@ -503,10 +503,11 @@ void NavigateAction::actionExePathDone(
         action_state_ = SPIN_TURN;   //set state to execute spin
         spin_turn_goal_.angle = yaw_goal;
         
-        if (fabs(min_angle)<10.0)
+        //removing to achieve high tolearance at the goal and spin turn server should take care of the threshold!!
+        /*if (fabs(min_angle)<10.0)
         {
           action_state_ = NAVIGATE; //set state to navigate because angle below spin threshold
-        }   
+        }*/  
         
       }
       else
