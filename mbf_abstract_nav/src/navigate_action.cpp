@@ -94,6 +94,13 @@ void NavigateAction::cancel()
 
 void NavigateAction::start(GoalHandle &goal_handle)
 {
+  if (action_state_ == ACTIVE)
+  {
+    if(!action_client_spin_turn_.getState().isDone())
+    {
+      action_client_spin_turn_.waitForResult(ros::Duration(30.0));
+    }
+  }
   action_state_ = SPLIT_PATH;
 
   goal_handle.setAccepted();
@@ -401,7 +408,10 @@ bool NavigateAction::getSplitPath(
     }
     else
     {
-      segment.checkpoints.push_back(plan.checkpoints[i]);
+      ROS_INFO("Plan requires final node spin to be : %d", plan.checkpoints[i].node.spin_turn);
+      forklift_interfaces::Checkpoint checkpoint = plan.checkpoints[i];
+      checkpoint.spin_turn = plan.checkpoints[i].node.spin_turn;
+      segment.checkpoints.push_back(checkpoint);
       result.push_back(segment);
       segment.checkpoints.clear();
     }
@@ -493,10 +503,11 @@ void NavigateAction::actionExePathDone(
         action_state_ = SPIN_TURN;   //set state to execute spin
         spin_turn_goal_.angle = yaw_goal;
         
-        if (fabs(min_angle)<10.0)
+        //removing to achieve high tolearance at the goal and spin turn server should take care of the threshold!!
+        /*if (fabs(min_angle)<10.0)
         {
           action_state_ = NAVIGATE; //set state to navigate because angle below spin threshold
-        }   
+        }*/  
         
       }
       else
