@@ -449,6 +449,11 @@ void NavigateAction::actionSpinTurnDone(
     if(result.status != 2)
     {
       ROS_ERROR_STREAM_NAMED("navigate", "Action \"spin_turn\" failed :" << result);
+      forklift_interfaces::NavigateResult navigate_result;
+      navigate_result.status = forklift_interfaces::NavigateResult::SPIN_FAILURE;
+      navigate_result.remarks = "Spin turn failed!";
+      goal_handle_.setAborted(navigate_result, state.getText());
+
     }
     else
     {
