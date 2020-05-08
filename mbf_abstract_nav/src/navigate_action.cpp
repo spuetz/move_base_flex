@@ -59,6 +59,12 @@ NavigateAction::NavigateAction(const std::string &name,
      replanning_(false),
      replanning_rate_(1.0)
 {
+    ros::NodeHandle nh;
+    ros::NodeHandle private_nh("~");
+
+    private_nh.param("tolerance_check", tolerance_check_, false);
+    private_nh.param("dist_tolerance", dist_tolerance_, 0.1);
+    private_nh.param("angle_tolerance", angle_tolerance_, M_PI / 18.0);
 }
 
 NavigateAction::~NavigateAction()
@@ -111,6 +117,7 @@ void NavigateAction::start(GoalHandle &goal_handle)
 
   const forklift_interfaces::NavigateGoal& goal = *(goal_handle.getGoal().get());
   const forklift_interfaces::NavigatePath &plan = goal.path;
+  plan_ = goal.path;
 
   forklift_interfaces::NavigateResult navigate_result;
 
@@ -158,7 +165,7 @@ void NavigateAction::start(GoalHandle &goal_handle)
   }
 
   // start navigating with the split path
-  startNavigate();  
+  startNavigate();
 }
 
 void NavigateAction::startNavigate()
@@ -522,9 +529,21 @@ void NavigateAction::actionExePathDone(
 
       if(path_segments_.empty())
       {
-        navigate_result.remarks = "Action navigate completed successfully!";
-        ROS_INFO_STREAM_NAMED("navigate", "Navigate action completed successfully");
-        goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
+
+        // do a final tolerance check
+        if (tolerance_check_
+          && mbf_utility::distance(robot_pose_, plan_.checkpoints.back().pose) < dist_tolerance_
+          && mbf_utility::angle(robot_pose_, plan_.checkpoints.back().pose) < angle_tolerance_)
+        {
+          navigate_result.status = result.status;
+          navigate_result.remarks = "Navigate action could not reach the desired tolerance";  
+          goal_handle_.setAborted(navigate_result, navigate_result.remarks);
+        }
+        {
+          navigate_result.remarks = "Action navigate completed successfully!";
+          ROS_INFO_STREAM_NAMED("navigate", "Navigate action completed successfully");
+          goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
+        }
         action_state_ = SUCCEEDED;
       }
       path_segments_.erase(path_segments_.begin()); //erase the done segment

@@ -126,6 +126,7 @@ class NavigateAction
 
   ros::Duration oscillation_timeout_;
 
+  forklift_interfaces::NavigatePath plan_;
   std::vector<forklift_interfaces::NavigatePath> path_segments_;
 
   double oscillation_distance_;
@@ -149,6 +150,15 @@ class NavigateAction
   bool replanning_;
   ros::Rate replanning_rate_;
   boost::mutex replanning_mtx_;
+
+  //! whether move base flex should check for the goal tolerance or not.
+  bool tolerance_check_;
+
+  //! distance tolerance to the given goal pose
+  double dist_tolerance_;
+
+  //! angle tolerance to the given goal pose
+  double angle_tolerance_;
 
 
   forklift_interfaces::NavigateFeedback navigate_feedback_;
