@@ -160,7 +160,6 @@ void NavigateAction::start(GoalHandle &goal_handle)
   // start navigating with the split path
   action_state_ = NAVIGATE;
   startNavigate();
-  ROS_INFO("Completed Navigation");
 
   // double check if the plan request has 
   if (action_state_ == SUCCEEDED)
@@ -232,7 +231,6 @@ void NavigateAction::startNavigate()
 void NavigateAction::runNavigate()
 {
   
-  action_state_ = FAILED;
   ROS_INFO_STREAM_NAMED("navigate", "Segments remaning: " << path_segments_.size());
 
   if(!path_segments_.empty())
@@ -509,13 +507,6 @@ void NavigateAction::actionExePathDone(
   {
     case actionlib::SimpleClientGoalState::SUCCEEDED:
 
-      path_segments_.erase(path_segments_.begin()); //erase the done segment  
-      if(path_segments_.empty())
-      {
-        action_state_ = SUCCEEDED;
-        ROS_INFO("Succeeded.....");
-        return;
-      }
       // check if we need a spin turn at the last checkpoint
       if(path_segments_.front().checkpoints.back().spin_turn)
       {
@@ -546,7 +537,13 @@ void NavigateAction::actionExePathDone(
       else
       {
         action_state_ = NAVIGATE;
-      }    
+      }  
+      if(path_segments_.empty())
+      {
+        action_state_ = SUCCEEDED;
+        return;
+      }
+      path_segments_.erase(path_segments_.begin()); //erase the done segment
       break;
 
     case actionlib::SimpleClientGoalState::ABORTED:
