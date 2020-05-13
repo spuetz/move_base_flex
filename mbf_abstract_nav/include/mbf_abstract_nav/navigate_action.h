@@ -40,6 +40,8 @@
 #ifndef MBF_ABSTRACT_NAV__MOVE_BASE_ACTION_H_
 #define MBF_ABSTRACT_NAV__MOVE_BASE_ACTION_H_
 
+#include <mutex>
+
 #include <actionlib/server/action_server.h>
 #include <actionlib/client/simple_action_client.h>
 
@@ -169,6 +171,7 @@ class NavigateAction
   };
 
   NavigateActionState action_state_;
+  std::mutex action_mutex_;
 };
 
 } /* mbf_abstract_nav */

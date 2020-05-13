@@ -158,38 +158,41 @@ void NavigateAction::start(GoalHandle &goal_handle)
   }
 
   // start navigating with the split path
+  action_state_ = NAVIGATE;
   startNavigate();
+  ROS_INFO("Completed Navigation");
 
   // double check if the plan request has 
   if (action_state_ == SUCCEEDED)
   {
     geometry_msgs::PoseStamped robot_pose;
     robot_info_.getRobotPose(robot_pose);
-    ROS_INFO_STREAM_NAMED("navigate", "Succeeded from navigation, double checking for orientation from mbf ...");
-
-    if (mbf_utility::distance(robot_pose, plan.checkpoints.back().pose) < plan.xy_goal_tolerance 
-      && mbf_utility::angle(robot_pose, plan.checkpoints.back().pose) < plan.yaw_goal_tolerance)
+    ROS_INFO("Succeeded from navigation, double checking for orientation from mbf");
+    if (mbf_utility::distance(robot_pose, plan.checkpoints.back().pose) <= plan.xy_goal_tolerance 
+      && mbf_utility::angle(robot_pose, plan.checkpoints.back().pose) <= plan.yaw_goal_tolerance)
     {
+      ROS_INFO_STREAM_NAMED("navigate", "Plan complete with desired goal tolerance");
       navigate_result.status = forklift_interfaces::NavigateResult::SUCCESS;
       navigate_result.remarks = "Action navigate completed successfully!";
       navigate_result.final_pose = robot_pose;
-      goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
+      goal_handle.setSucceeded(navigate_result, navigate_result.remarks);
     }
     else
     {
+      ROS_INFO_STREAM_NAMED("navigate", "Plan failed as the robot did not reach with desired goal tolerance");
       navigate_result.status = forklift_interfaces::NavigateResult::MISSED_GOAL;
       navigate_result.remarks = "Requested pose in the plan was not reached";
       navigate_result.final_pose = robot_pose;
-      goal_handle_.setAborted(navigate_result, navigate_result.remarks);
+      goal_handle.setAborted(navigate_result, navigate_result.remarks);
     }
   }
 }
 
 void NavigateAction::startNavigate()
 {
-  action_state_ = NAVIGATE;
-  while (action_state_ != SUCCEEDED || action_state_ != FAILED)
+  while (action_state_ != SUCCEEDED && action_state_ != FAILED)
   {
+    action_mutex_.lock();
     switch (action_state_)
     {
     case NAVIGATE:
@@ -221,6 +224,8 @@ void NavigateAction::startNavigate()
       break;
     }
     ros::spinOnce();
+    action_mutex_.unlock();
+    ros::Duration(0.1).sleep();
   }
 }
 
@@ -475,8 +480,7 @@ void NavigateAction::actionSpinTurnDone(
     {
       ROS_INFO_STREAM_NAMED("navigate", "Action \"spin_turn\" completed successfully");
       action_state_ = NAVIGATE;
-    }
-    
+    } 
   }
 
 }
@@ -485,9 +489,9 @@ void NavigateAction::actionExePathDone(
     const actionlib::SimpleClientGoalState &state,
     const mbf_msgs::ExePathResultConstPtr &result_ptr)
 {
-  action_state_ =  FAILED;
-
-  ROS_DEBUG_STREAM_NAMED("navigate", "Action \"exe_path\" finished.");
+  std::lock_guard<std::mutex> lck (action_mutex_);
+  action_state_ = FAILED;
+  ROS_INFO_STREAM_NAMED("navigate", "Action \"exe_path\" finished.");
 
   const mbf_msgs::ExePathResult& result = *(result_ptr.get());
   const forklift_interfaces::NavigateGoal& goal = *(goal_handle_.getGoal().get());
@@ -499,11 +503,19 @@ void NavigateAction::actionExePathDone(
   navigate_result.angle_to_goal = result.angle_to_goal;
   navigate_result.final_pose = result.final_pose;
 
-  ROS_DEBUG_STREAM_NAMED("exe_path", "Current state:" << state.toString());
+  ROS_INFO_STREAM_NAMED("exe_path", "Current state:" << state.toString());
 
   switch (state.state_)
   {
     case actionlib::SimpleClientGoalState::SUCCEEDED:
+
+      path_segments_.erase(path_segments_.begin()); //erase the done segment  
+      if(path_segments_.empty())
+      {
+        action_state_ = SUCCEEDED;
+        ROS_INFO("Succeeded.....");
+        return;
+      }
       // check if we need a spin turn at the last checkpoint
       if(path_segments_.front().checkpoints.back().spin_turn)
       {
@@ -534,13 +546,7 @@ void NavigateAction::actionExePathDone(
       else
       {
         action_state_ = NAVIGATE;
-      }
-
-      if(path_segments_.empty())
-      {
-        action_state_ = SUCCEEDED;
-      }
-      path_segments_.erase(path_segments_.begin()); //erase the done segment
+      }    
       break;
 
     case actionlib::SimpleClientGoalState::ABORTED:
