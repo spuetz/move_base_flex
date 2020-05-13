@@ -158,7 +158,31 @@ void NavigateAction::start(GoalHandle &goal_handle)
   }
 
   // start navigating with the split path
-  startNavigate();  
+  startNavigate();
+
+  // double check if the plan request has 
+  if (action_state_ == SUCCEEDED)
+  {
+    geometry_msgs::PoseStamped robot_pose;
+    robot_info_.getRobotPose(robot_pose);
+    ROS_INFO_STREAM_NAMED("navigate", "Succeeded from navigation, double checking for orientation from mbf ...");
+
+    if (mbf_utility::distance(robot_pose, plan.checkpoints.back().pose) < plan.xy_goal_tolerance 
+      && mbf_utility::angle(robot_pose, plan.checkpoints.back().pose) < plan.yaw_goal_tolerance)
+    {
+      navigate_result.status = forklift_interfaces::NavigateResult::SUCCESS;
+      navigate_result.remarks = "Action navigate completed successfully!";
+      navigate_result.final_pose = robot_pose;
+      goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
+    }
+    else
+    {
+      navigate_result.status = forklift_interfaces::NavigateResult::MISSED_GOAL;
+      navigate_result.remarks = "Requested pose in the plan was not reached";
+      navigate_result.final_pose = robot_pose;
+      goal_handle_.setAborted(navigate_result, navigate_result.remarks);
+    }
+  }
 }
 
 void NavigateAction::startNavigate()
@@ -256,15 +280,7 @@ void NavigateAction::runNavigate()
     }
   }
   else
-  {
-
-    forklift_interfaces::NavigateResult navigate_result;
-    navigate_result.status = forklift_interfaces::NavigateResult::SUCCESS;
-    navigate_result.remarks = "Action navigate completed successfully!";
-    navigate_result.final_pose = robot_pose_;
-    ROS_INFO_STREAM_NAMED("navigate", "Navigate action completed successfully");
-    goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
-    
+  {    
     action_state_ = SUCCEEDED;
     return;
   }
@@ -522,9 +538,6 @@ void NavigateAction::actionExePathDone(
 
       if(path_segments_.empty())
       {
-        navigate_result.remarks = "Action navigate completed successfully!";
-        ROS_INFO_STREAM_NAMED("navigate", "Navigate action completed successfully");
-        goal_handle_.setSucceeded(navigate_result, navigate_result.remarks);
         action_state_ = SUCCEEDED;
       }
       path_segments_.erase(path_segments_.begin()); //erase the done segment
