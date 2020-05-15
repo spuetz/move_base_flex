@@ -170,8 +170,8 @@ void NavigateAction::start(GoalHandle &goal_handle)
     navigate_result.dist_to_goal = mbf_utility::distance(robot_pose, plan.checkpoints.back().pose);
     ROS_INFO("Succeeded from navigation, double checking for orientation from mbf with \
      dist_to_goal: %.4f, angle_to_goal: %.4f", navigate_result.dist_to_goal, navigate_result.angle_to_goal);
-    if (navigate_result.dist_to_goal <= plan.xy_goal_tolerance 
-      && navigate_result.angle_to_goal <= plan.yaw_goal_tolerance)
+    if ((navigate_result.dist_to_goal <= plan.xy_goal_tolerance || plan.xy_goal_tolerance <= 1e-5) 
+      && (navigate_result.angle_to_goal <= plan.yaw_goal_tolerance || plan.yaw_goal_tolerance <= 1e-5))
     {
       ROS_INFO_STREAM_NAMED("navigate", "Plan complete with desired goal tolerance");
       navigate_result.status = forklift_interfaces::NavigateResult::SUCCESS;
