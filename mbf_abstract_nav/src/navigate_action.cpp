@@ -474,7 +474,7 @@ void NavigateAction::actionSpinTurnDone(
       forklift_interfaces::NavigateResult navigate_result;
       navigate_result.status = forklift_interfaces::NavigateResult::SPIN_FAILURE;
       navigate_result.remarks = "Spin turn failed!";
-      //goal_handle_.setAborted(navigate_result, state.getText());
+      goal_handle_.setAborted(navigate_result, state.getText());
 
     }
     else
