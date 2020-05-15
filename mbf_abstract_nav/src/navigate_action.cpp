@@ -192,7 +192,7 @@ void NavigateAction::start(GoalHandle &goal_handle)
 
 void NavigateAction::startNavigate()
 {
-  while (action_state_ != SUCCEEDED && action_state_ != FAILED)
+  while (action_state_ != SUCCEEDED && action_state_ != FAILED && action_state_ != CANCELED)
   {
     action_mutex_.lock();
     switch (action_state_)
@@ -225,8 +225,8 @@ void NavigateAction::startNavigate()
     default:
       break;
     }
-    ros::spinOnce();
     action_mutex_.unlock();
+    ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
 }
@@ -474,7 +474,7 @@ void NavigateAction::actionSpinTurnDone(
       forklift_interfaces::NavigateResult navigate_result;
       navigate_result.status = forklift_interfaces::NavigateResult::SPIN_FAILURE;
       navigate_result.remarks = "Spin turn failed!";
-      goal_handle_.setAborted(navigate_result, state.getText());
+      //goal_handle_.setAborted(navigate_result, state.getText());
 
     }
     else
