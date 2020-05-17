@@ -203,6 +203,7 @@ void NavigateAction::startNavigate()
       break;
     case EXE_PATH:
       // state for executing current segment
+      last_oscillation_reset_ = ros::Time::now(); // important to reset the oscillation
       action_client_exe_path_.sendGoal(
           exe_path_goal_,
           boost::bind(&NavigateAction::actionExePathDone, this, _1, _2),
