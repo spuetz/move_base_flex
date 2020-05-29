@@ -240,9 +240,9 @@ void NavigateAction::runNavigate()
   if(!path_segments_.empty())
   {
 
-    ROS_INFO_STREAM_NAMED("navigate","Spin turn: "<< static_cast<int>(path_segments_.front().checkpoints.front().spin_turn));
+    ROS_INFO_STREAM_NAMED("navigate","Spin turn: "<< static_cast<int>(path_segments_.front().checkpoints.front().node.spin_turn));
     //check if the first checkpoint needs spin turn
-    if(path_segments_.front().checkpoints.front().spin_turn)
+    if(path_segments_.front().checkpoints.front().node.spin_turn >0)
     {
 
       const auto orientation = path_segments_.front().checkpoints.front().pose.pose.orientation;
@@ -261,7 +261,7 @@ void NavigateAction::runNavigate()
       
       if (fabs(min_angle)<10.0)
       {
-        path_segments_.front().checkpoints.front().spin_turn = false;
+        path_segments_.front().checkpoints.front().node.spin_turn = false;
         action_state_ = NAVIGATE;
         return;
       }
@@ -270,7 +270,7 @@ void NavigateAction::runNavigate()
       
       action_state_ = SPIN_TURN;
       
-      path_segments_.front().checkpoints.front().spin_turn = false; 
+      path_segments_.front().checkpoints.front().node.spin_turn = false; 
       
       return;
     }
@@ -413,15 +413,13 @@ bool NavigateAction::getSplitPath(
     }
     else if (i<plan.checkpoints.size()-1) // always make sure there is a point back and ahead
     {
-      bool spin = plan.checkpoints[i].node.spin_turn && plan.checkpoints[i].spin_turn;
-      if(spin || (plan.checkpoints[i].spin_turn && 
-          !(isSmoothTurnPossible(plan.checkpoints[i-1], plan.checkpoints[i], plan.checkpoints[i+1])))){
+      if(plan.checkpoints[i].node.spin_turn || !(isSmoothTurnPossible(plan.checkpoints[i-1], plan.checkpoints[i], plan.checkpoints[i+1]))){
         segment.checkpoints.push_back(plan.checkpoints[i]);
         result.push_back(segment);
         segment.checkpoints.clear();
         
         forklift_interfaces::Checkpoint checkpoint = plan.checkpoints[i];
-        checkpoint.spin_turn = false;
+        checkpoint.node.spin_turn = false;
         
         segment.checkpoints.push_back(checkpoint);
       }
@@ -433,7 +431,6 @@ bool NavigateAction::getSplitPath(
     {
       ROS_INFO("Plan requires final node spin to be : %d", plan.checkpoints[i].node.spin_turn);
       forklift_interfaces::Checkpoint checkpoint = plan.checkpoints[i];
-      checkpoint.spin_turn = plan.checkpoints[i].node.spin_turn;
       segment.checkpoints.push_back(checkpoint);
       result.push_back(segment);
       segment.checkpoints.clear();
@@ -445,7 +442,7 @@ bool NavigateAction::getSplitPath(
     ROS_INFO_STREAM_NAMED("navigate","Split segments:");
     for (const auto& point : segment.checkpoints)
     {
-        ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]" << "spin turn:" << static_cast<int>(point.spin_turn));
+        ROS_INFO_STREAM_NAMED("navigate","["<< point.pose.pose.position.x << "," << point.pose.pose.position.y << "]" << "spin turn:" << static_cast<int>(point.node.spin_turn));
     }
   }
 
@@ -512,7 +509,7 @@ void NavigateAction::actionExePathDone(
     case actionlib::SimpleClientGoalState::SUCCEEDED:
 
       // check if we need a spin turn at the last checkpoint
-      if(path_segments_.front().checkpoints.back().spin_turn)
+      if(path_segments_.front().checkpoints.back().node.spin_turn >= 0)
       {
         const auto orientation = path_segments_.front().checkpoints.back().pose.pose.orientation;
         geometry_msgs::PoseStamped robot_pose;
