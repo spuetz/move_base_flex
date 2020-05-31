@@ -261,7 +261,7 @@ void NavigateAction::runNavigate()
       
       if (fabs(min_angle)<10.0)
       {
-        path_segments_.front().checkpoints.front().node.spin_turn = 0;
+        path_segments_.front().checkpoints.front().node.spin_turn = -1;
         action_state_ = NAVIGATE;
         return;
       }
@@ -270,8 +270,7 @@ void NavigateAction::runNavigate()
       
       action_state_ = SPIN_TURN;
       
-      path_segments_.front().checkpoints.front().node.spin_turn = 0; 
-      
+      path_segments_.front().checkpoints.front().node.spin_turn = -1;    
       return;
     }
     else
@@ -370,6 +369,16 @@ bool NavigateAction::isSmoothTurnPossible(const forklift_interfaces::Checkpoint&
 
   ROS_INFO("Next orientation %f, Next angle: %f", orientation, slope);
 
+  // check if its straight line segment
+  if (std::abs(angles::shortest_angular_distance(initial_orientation, orientation)) < 3e-1) {
+    ROS_INFO("Expecting straight line checkpoint: %d and checkpoint: %d", previous.node.node_id, current.node.node_id);
+    return true;
+  }
+
+  // if it is not straight line, force spin turn
+  if (current.node.spin_turn > 0) {
+    return false;
+  } 
 
   // check if robot is facing forwards in both the segments
   if((std::abs(angles::shortest_angular_distance(initial_orientation, initial_slope)) < 3e-1) &&
@@ -426,7 +435,7 @@ bool NavigateAction::getSplitPath(
         ROS_ERROR_STREAM_NAMED("navigate", "Terminating as the spin turn flag is set to -1");
         break;
       }
-      else if((plan.checkpoints[i].node.spin_turn > 0) || !(isSmoothTurnPossible(plan.checkpoints[i-1], plan.checkpoints[i], plan.checkpoints[i+1]))){
+      else if(!(isSmoothTurnPossible(plan.checkpoints[i-1], plan.checkpoints[i], plan.checkpoints[i+1]))){
         segment.checkpoints.push_back(plan.checkpoints[i]);
         result.push_back(segment);
         segment.checkpoints.clear();
