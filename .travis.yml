@@ -1,6 +1,8 @@
 sudo: required
-language: generic
-dist: trusty
+dist: bionic
+language: minimal
+services:
+  - docker
 
 notifications:
   email:
@@ -28,3 +30,4 @@ install:
 
 script:
   - .ci_config/travis.sh
+
